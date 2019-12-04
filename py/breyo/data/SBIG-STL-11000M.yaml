@@ -1,8 +1,8 @@
 # SBIG STL-11000M basic parameters
 # 2019 Dec 3
 ccd:
-    pixsize: 9.0  # pixel size [microns, unbinned]
-    ncols: 4008   # number of pixels along columns [unbinned]
-    nrows: 2672   # number of pixels along rows [unbinned]
-    readnoise: 13 # [electron/pix, rms]
-    gain: 0.81    # [electron/ADU, unbinned]
+    pixsize: 9.0    # pixel size [microns, unbinned]
+    ncols: 2004     # number of pixels along columns [binned 2x2]
+    nrows: 1336     # number of pixels along rows [binned 2x2]
+    gain: 1.62      # [electron/ADU, binned 2x2]
+    readnoise: 13.0 # [electron/pix, rms]

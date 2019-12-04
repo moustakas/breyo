@@ -15,21 +15,19 @@ from astropy.nddata import CCDData
 import ccdproc as ccdp
 from ccdproc import ImageFileCollection
 
-imtype2 = {'light': 'Light Frame',
-          'dark': 'Dark Frame',
-          'flat': 'Flat Field',
-          'bias': 'Bias Frame'}
-    
-imtype = {'Light Frame': 'object',
-          'Dark Frame': 'dark',
-          'Flat Field': 'flat',
-          'Bias Frame': 'bias'}
+image2type = {'Light Frame': 'object',
+              'Dark Frame': 'dark',
+              'Flat Field': 'flat',
+              'Bias Frame': 'bias'}
 
 newfilt = {'Blue': 'B',
            'Green': 'V',
            'Red': 'R',
            'OIII': 'OIII',
-           'Ha': 'Ha'}
+           'O3': 'OIII',
+           'Ha': 'Halpha',
+           'Halpha': 'Halpha',
+           }
 
 #from astropy.io import fits
 #
@@ -162,6 +160,9 @@ def main():
     reduxdir = os.path.join(os.getenv('BREYO_DATA_DIR'), 'reduced', args.night)
     if not os.path.isdir(reduxdir):
         os.makedirs(reduxdir, exist_ok=True)
+    calibdir = os.path.join(reduxdir, 'calib')
+    if not os.path.isdir(calibdir):
+        os.makedirs(calibdir, exist_ok=True)
 
     if args.preproc:
         ic = ccdp.ImageFileCollection(rawdir, keywords='*', glob_include='*.fit*')
@@ -169,29 +170,44 @@ def main():
         if args.verbose:
             ic.summary['file', 'imagetyp', 'filter', 'exptime', 'naxis1', 'naxis2']
 
-        #for fname in ic.files:
         for exp, fname in ic.hdus(return_fname=True):
-            #if exp.header['NAXIS2'] < 1000: #
             rawfile = os.path.join(rawdir, fname)
-            outfile = os.path.join(reduxdir, fname.replace('.fit', '.fits'))
-            if os.path.isfile(outfile) or not args.overwrite:
+            hdr = exp.header
+            imtype = image2type[hdr['IMAGETYP']]
+
+            # basic sanity checks
+            if (imtype == 'object' or imtype == 'flat') and 'FILTER' not in hdr:
+                print('Missing FILTER in image {}'.format(rawfile))
+                pdb.set_trace()
+                continue
+
+            if hdr['NAXIS2'] < 1000:
+                print('Subframe issue in image {}'.format(rawfile))
+                continue
+
+            # push these cases to a function
+            if imtype == 'bias' or imtype == 'dark' or imtype == 'flat':
+                outfile = os.path.join(calibdir, fname.replace('.fit', '.fits'))
+            else:
+            #    filt = newfilt[hdr['FILTER']].strip()
+            #    obj = hdr['OBJECT'].strip()
+            #    outfile = os.path.join(reduxdir, '{}-{}.fits'.format(obj, filt))
+                 outfile = os.path.join(reduxdir, fname.replace('.fit', '.fits'))
+                
+            if os.path.isfile(outfile) and not args.overwrite:
                 print('Skipping existing file {}'.format(outfile))
             else:
-                hdr = exp.header
-                img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
-
                 # update the header
-                #hdr = astropy.io.fits.getheader(rawfile)
-                hdr['IMAGETYP'] = imtype[hdr['IMAGETYP']]
-                hdr['FILTER'] = newfilt[hdr['FILTER']]
+                hdr['IMAGETYP'] = imtype
+                if 'FILTER' in hdr:
+                    hdr['FILTER'] = newfilt[hdr['FILTER']]
 
                 # ToDo: generalize the trim and add a header card
+                img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
                 img = img[:, 50:]
 
                 print('Writing {}'.format(outfile))
                 img.write(outfile, overwrite=True)
-
-        pdb.set_trace()
 
     if args.masterbias:
         biasfiles = ic.files_filtered(imagetyp=ccdkeyword['bias'], include_path=True)
