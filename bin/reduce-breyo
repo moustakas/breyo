@@ -174,23 +174,22 @@ def main():
             #if exp.header['NAXIS2'] < 1000: #
             rawfile = os.path.join(rawdir, fname)
             outfile = os.path.join(reduxdir, fname.replace('.fit', '.fits'))
+            if os.path.isfile(outfile) or not args.overwrite:
+                print('Skipping existing file {}'.format(outfile))
+            else:
+                hdr = exp.header
+                img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
 
-            hdr = exp.header
-            img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
+                # update the header
+                #hdr = astropy.io.fits.getheader(rawfile)
+                hdr['IMAGETYP'] = imtype[hdr['IMAGETYP']]
+                hdr['FILTER'] = newfilt[hdr['FILTER']]
 
-            # update the header
-            #hdr = astropy.io.fits.getheader(rawfile)
-            hdr['IMAGETYP'] = imtype[hdr['IMAGETYP']]
-            hdr['FILTER'] = newfilt[hdr['FILTER']]
+                # ToDo: generalize the trim and add a header card
+                img = img[:, 50:]
 
-            # ToDo: generalize the trim and add a header card
-            img = img[:, 50:]
-            
-            if not os.path.isfile(outfile) or args.overwrite:
                 print('Writing {}'.format(outfile))
                 img.write(outfile, overwrite=True)
-            else:
-                print('Skipping existing file {}'.format(outfile))
 
         pdb.set_trace()
 
