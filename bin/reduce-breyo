@@ -51,6 +51,7 @@ def main():
     parser.add_argument('--masterbias', action='store_true', help='Build the master bias frame.')
     parser.add_argument('--masterflats', action='store_true', help='Build the master (sky)flats.')
     parser.add_argument('--reduceall', action='store_true', help='Process the science images.')
+    parser.add_argument('--astrometry', action='store_true', help='Solve the astrometry.')
     parser.add_argument('--verbose', action='store_true', help='Be verbose.')
     parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files.')
     args = parser.parse_args()
@@ -190,7 +191,7 @@ def main():
             icfilt = ic.filter(filter=filt)
             for pccd, fname in icfilt.ccds(return_fname=True):
                 pfile = os.path.join(reduxdir, fname)
-                outfile = os.path.join(reduxdir, 'fbp-{}'.format(fname))
+                outfile = os.path.join(reduxdir, 'fb{}'.format(fname))
                 if os.path.isfile(outfile) and not args.overwrite:
                     print('Skipping existing file {}'.format(outfile))
                 else:
@@ -206,6 +207,39 @@ def main():
 
                    print('  Writing {}'.format(outfile))
                    fbpccd.write(outfile, overwrite=True)
+
+    if args.astrometry:
+        from astropy.coordinates import SkyCoord
+        
+        configfile = os.path.join(os.getenv('BREYO_DATA_DIR'), 'astrometry.net', 'index-5000', 'cfg')
+
+        keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='fbp-*.fits')
+        for fname in ic.files_filtered(include_path=True):
+
+            outfile = os.path.join(reduxdir, 'a{}'.format(os.path.basename(fname)))
+            if os.path.isfile(outfile) and not args.overwrite:
+                print('Skipping existing file {}'.format(outfile))
+            else:
+                hdr = astropy.io.fits.getheader(fname)
+                c = SkyCoord(hdr['OBJCTRA']+hdr['OBJCTDEC'], unit=(u.hourangle, u.deg))
+                ra, dec = c.ra.value, c.dec.value
+
+                cmd =  'solve-field {scifile} --config {configfile} --ra {ra} --dec {dec} '
+                cmd += '--scale-low 0.5 --scale-high 1.0 --scale-units arcsecperpix '
+                cmd += '--radius 0.2 --tweak-order 2 --crpix-center --objs 100 '
+                cmd += '--solved none --index-xyls none --match none '
+                cmd += '--rdls none --corr none --temp-axy '
+                cmd += '--new-fits {outfile} '
+                cmd += '--no-verify --no-plots --overwrite ' 
+                cmd = cmd.format(scifile=fname, outfile=outfile, configfile=configfile,
+                                 ra=ra, dec=dec)
+                print(cmd)
+
+
+
+                pdb.set_trace()
+
 
 if __name__ == '__main__':
     main()
