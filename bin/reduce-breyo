@@ -8,12 +8,14 @@ import os, glob, time, pdb
 import argparse
 
 import numpy as np
-import astropy.io.fits
+
+import astropy.stats
 import astropy.units as u
 from astropy.nddata import CCDData
 
 import ccdproc as ccdp
-from ccdproc import ImageFileCollection
+
+import breyo.io
 
 image2type = {'Light Frame': 'object',
               'Dark Frame': 'dark',
@@ -29,114 +31,9 @@ newfilt = {'Blue': 'B',
            'Halpha': 'Halpha',
            }
 
-#from astropy.io import fits
-#
-#
-## Commented out IPython magic to ensure Python compatibility.
-## %time reduce_alldata(bias=masterbias, bflat=masterflat_b, vflat=masterflat_v, rflat=masterflat_r, overwrite=do_reduce_alldata)
-#
-#"""### Astrometrically calibrate the data.
-#
-#"Astrometry" is the process of determining *where* your data are pointing, i.e.,figuring out the transformation matrix between pixel coordinates (x,y) and celestial coordinates (RA,Dec), which has a long, rich history.  In a nutshell, this transformation matrix is determined by comparing the *observed* positions of stars (or other reference sources) against their *known* positions (i.e., using an external, calibrated catalog).
-#
-#Needless to say there are many intricacies involved in astrometry, which I encourage you to delve into.  But for now we can proceed with just the basics and use the [astrometry.net](http://astrometry.net) engine to determine the astrometric solution of our data.
-#
-#Let's start by reading a single reduced image.
-#"""
-#
-#imgfile = os.path.join('{}'.format(reduxdir), 'fb-NGC6830-0002v.fits')
-#print('Reading {}'.format(imgfile))
-#img, hdr = fits.getdata(imgfile, header=True)
-##display_image(img)
-#
-#"""First, we need the *observed* positions of the stars in this image, but in order to detect those stars we first have to model and subtract the *sky background* from the data.
-#
-#We'll build the sky background by measuring the median pixel value in a "low-resolution" mesh grid, which we will then interpolate onto the original resolution of the image.  For additional details see the **photutils** tutorial on [Background Estimation](https://photutils.readthedocs.io/en/stable/background.html).
-#"""
-#
-## Commented out IPython magic to ensure Python compatibility.
-## %time bkg = get_sky_background(img, verbose=True)
-#
-#"""Now let's visualize the original data, the background model, and the background-subtracted image."""
-#
-#img_nosky = img - bkg.background
-#
-#display_image(img)
-#display_image(bkg.background)
-#display_image(img_nosky)
-#
-#qa_background()
-#
-#"""Next, let's find all the point sources (i.e., stars) in the image above a threshold value of the background rms.  Also write out the file for future use."""
-#
-#srcs = find_stars(img_nosky, imgfile, sigma=bkg.background_rms_median, nsigma=5, 
-#                  verbose=True, overwrite=do_calib_stars)
-#srcs
-#
-#"""Getting the solution will take a little time, but you can monitor the results by navigating to [nova.astrometry.net](http://nova.astrometry.net). Be patient!"""
-#
-## Commented out IPython magic to ensure Python compatibility.
-#my_api = 'qmadkihbafggctcf'
-## %time wcsfile, wcshdr = get_astrometry(imgfile, srcs, api_key=my_api, overwrite=do_astrometry)
-#wcshdr
-#
-#"""For fun, let's do one more step and project/map/interpolate the original (i.e., distorted) image onto an undistorted tangent plane and then visualize it!"""
-#
-#img_proj, footprint = undistort_image(imgfile, wcsfile, pixscale=0.8, display=True)
-#
-#"""### Photometrically calibrate the data.
-#
-#The last step we will do here is to photometrically calibrate the data.  Remember that our images are in units of counts or ADU, but in order to do (astro)physics, we need to convert these counts (really, the count *rate*, ADU/s) to physical units like flux density, erg/s/cm2/Hz.
-#
-#We will do our photometric calibration by correlating the sources we've detected against an *existing* catalog which already has been calibrated, in order to derive the **zeropoint** for our image.  Then we will apply the mean zeropoint, accounting for our exposure time and atmospheric extinction, in order to create final calibrated image.
-#
-#For demonstration purposes, let's again focus on a single image.  We'll read the reduced image and the astrometric header.
-#"""
-#
-#def read_one_image():
-#    from astropy.table import Table
-#    from astropy.wcs import WCS
-#
-#    # Hack!
-#    imgfile = os.path.join('{}'.format(reduxdir), 'fb-NGC6830-0002v.fits')
-#    hdrfile = os.path.join('{}'.format(reduxdir), 'wfb-NGC6830-0002v.fits')
-#    starsfile = os.path.join('{}'.format(reduxdir), 'stars-fb-NGC6830-0002v.fits')
-#
-#    print('Reading {}'.format(imgfile))
-#    img, hdr = fits.getdata(imgfile, header=True)
-#    wcshdr = fits.getheader(hdrfile)
-#    imgwcs = WCS(wcshdr)#, naxis=2)
-#
-#    #print('Reading {}'.format(starsfile))
-#    #srcs = Table.read(starsfile)
-#
-#    return img, hdr, imgwcs
-#
-#img, hdr, imgwcs = read_one_image()
-##display_image(img, calibrated=True)
-#
-#"""Retrieve a catalog of reference stars."""
-#
-## Commented out IPython magic to ensure Python compatibility.
-## %time refcat = get_panstarrs_catalog(imgwcs, radius=0.3)
-#refcat
-#
-#kext = {'Blue': 0.4, 'Green': 0.2, 'Red': 0.1}
-#
-#import numpy.ma as ma
-#
-#instmag = srcs['mag'][indx].data - 0.4 * hdr['AIRMASS'] * kext[hdr['FILTER']]
-##ps_g = refcat['gMeanPSFMag'][indx_ref].data
-#ps_r = refcat['rMeanPSFMag'][indx_ref].data
-##ps_i = refcat['iMeanPSFMag'][indx_ref].data
-##ps_z = refcat['zMeanPSFMag'][indx_ref].data
-#
-#medzp = np.median(ps_r - instmag)
-#print(hdr['FILTER'], medzp)
-#
-#_ = plt.hist(ps_r - instmag, bins=50)
-#plt.axvline(x=medzp, lw=3, color='k')
-
+def _inv_median(a):
+    return 1 / np.median(a)
+                
 def main():
     """
     do_masterbias = False
@@ -152,6 +49,8 @@ def main():
     parser.add_argument('night', type=str, help='Specify the night to reduce.')
     parser.add_argument('--preproc', action='store_true', help='Preprocess the raw data.')
     parser.add_argument('--masterbias', action='store_true', help='Build the master bias frame.')
+    parser.add_argument('--masterflats', action='store_true', help='Build the master (sky)flats.')
+    parser.add_argument('--reduceall', action='store_true', help='Process the science images.')
     parser.add_argument('--verbose', action='store_true', help='Be verbose.')
     parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files.')
     args = parser.parse_args()
@@ -164,11 +63,19 @@ def main():
     if not os.path.isdir(calibdir):
         os.makedirs(calibdir, exist_ok=True)
 
+    masterbiasfile = os.path.join(reduxdir, 'master-bias.fits')
+
+    config = breyo.io.read_config()
+
+    # ToDo: building uncertainty map and bad pixel mask
+    # https://ccdproc.readthedocs.io/en/latest/reduction_toolbox.html#gain-correct-and-create-deviation-image
+    # https://mwcraig.github.io/ccd-as-book/08-00-Image-masking.html
     if args.preproc:
-        ic = ccdp.ImageFileCollection(rawdir, keywords='*', glob_include='*.fit*')
+        keys = ['naxis1', 'naxis2', 'imagetyp', 'filter', 'exptime']
+        ic = ccdp.ImageFileCollection(rawdir, keywords=keys, glob_include='*.fit*')
         print('Parsing {} files in {}'.format(len(ic.files), rawdir))
         if args.verbose:
-            ic.summary['file', 'imagetyp', 'filter', 'exptime', 'naxis1', 'naxis2']
+            print(ic.summary)
 
         for exp, fname in ic.hdus(return_fname=True):
             rawfile = os.path.join(rawdir, fname)
@@ -178,7 +85,6 @@ def main():
             # basic sanity checks
             if (imtype == 'object' or imtype == 'flat') and 'FILTER' not in hdr:
                 print('Missing FILTER in image {}'.format(rawfile))
-                pdb.set_trace()
                 continue
 
             if hdr['NAXIS2'] < 1000:
@@ -192,7 +98,7 @@ def main():
             #    filt = newfilt[hdr['FILTER']].strip()
             #    obj = hdr['OBJECT'].strip()
             #    outfile = os.path.join(reduxdir, '{}-{}.fits'.format(obj, filt))
-                 outfile = os.path.join(reduxdir, fname.replace('.fit', '.fits'))
+                 outfile = os.path.join(reduxdir, 'p-{}'.format(fname.replace('.fit', '.fits')))
                 
             if os.path.isfile(outfile) and not args.overwrite:
                 print('Skipping existing file {}'.format(outfile))
@@ -202,23 +108,104 @@ def main():
                 if 'FILTER' in hdr:
                     hdr['FILTER'] = newfilt[hdr['FILTER']]
 
-                # ToDo: generalize the trim and add a header card
+                # ToDo: generalize the trimming!
                 img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
-                img = img[:, 50:]
+                img = ccdp.trim_image(img[:, 50:], add_keyword={'TRIM': True})
+                img = ccdp.gain_correct(img, gain=config['ccd']['gain'],
+                                        add_keyword={'GAINCOR': True})
 
                 print('Writing {}'.format(outfile))
                 img.write(outfile, overwrite=True)
 
     if args.masterbias:
-        biasfiles = ic.files_filtered(imagetyp=ccdkeyword['bias'], include_path=True)
-        pdb.set_trace()
+        if os.path.isfile(masterbiasfile) and not args.overwrite:
+            print('Skipping existing master bias {}'.format(masterbiasfile))
+        else:
+            keys = ['naxis1', 'naxis2', 'imagetyp', 'exptime']
+            ic = ccdp.ImageFileCollection(calibdir, keywords=keys, glob_include='bias*.fits')
+            if args.verbose:
+                print(ic.summary)
+                
+            nbias = len(ic.files)
+            print('Building master bias from {} images in {}'.format(nbias, calibdir))
 
-        masterbias = ccdproc.combine(biasfiles, method='average', sigma_clip=True, unit=u.adu)
+            masterbias = ccdp.combine(ic.files_filtered(include_path=True),
+                                      method='average', sigma_clip=True,
+                                      sigma_clip_low_thresh=5, 
+                                      sigma_clip_high_thresh=5,
+                                      sigma_clip_func=np.ma.median,
+                                      sigma_clip_dev_func=astropy.stats.mad_std)
+            masterbias.header['NBIAS'] = nbias
+            masterbias.header['COMBINED'] = True
+
+            print('  Writing {}'.format(masterbiasfile))
+            masterbias.write(masterbiasfile, overwrite=True)
+
+    if args.masterflats:
+        print('Reading {}'.format(masterbiasfile))
+        masterbias = CCDData.read(masterbiasfile)
+
+        ic = ccdp.ImageFileCollection(calibdir, keywords='*', glob_include='skyflat*.fits')
+        for filt in set(ic.summary['filter']):
+            masterflatfile = os.path.join(reduxdir, 'master-flat-{}.fits'.format(filt))
+            if os.path.isfile(masterflatfile) and not args.overwrite:
+                print('Skipping existing master flat {}'.format(masterflatfile))
+            else:
+                icflats = ic.filter(imagetyp='flat', filter=filt)
+                nflat = len(icflats.files)
+                print('Building {} masterflat from {} images found in {}'.format(filt, nflat, calibdir))
+
+                rflats = []
+                for ccd in icflats.ccds():
+                    rflats.append( ccdp.subtract_bias(ccd, masterbias, add_keyword={'SUBBIAS': True}) )
+                    
+                masterflat = ccdp.combine(rflats, method='average', scale=_inv_median,
+                                          sigma_clip=True,
+                                          sigma_clip_low_thresh=5, 
+                                          sigma_clip_high_thresh=5,
+                                          sigma_clip_func=np.ma.median,
+                                          sigma_clip_dev_func=astropy.stats.mad_std)
+                masterflat.header['NFLAT'] = nflat
+                masterflat.header['COMBINED'] = True
+
+                print('  Writing {}'.format(masterflatfile))
+                masterflat.write(masterflatfile, overwrite=True)
+
+    if args.reduceall:
+        print('Reading {}'.format(masterbiasfile))
+        masterbias = CCDData.read(masterbiasfile)
+
+        keys = ['file', 'naxis1', 'naxis2', 'object', 'imagetyp', 'filter', 'exptime']
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='p-*.fits')
+                                      
+        if args.verbose:
+            print(ic.summary)
         
-        gaincorrected_master_bias = ccdproc.gain_correct(master_bias,float(gain))
-        print('writing fits file for master bias')
-        gaincorrected_master_bias.write('bias-combined.fits',overwrite=True)
+        for filt in set(ic.summary['filter']):
+            # throw an error if not found
+            masterflatfile = os.path.join(reduxdir, 'master-flat-{}.fits'.format(filt))
+            print('Reading {}'.format(masterflatfile))
+            masterflat = CCDData.read(masterflatfile)
+            
+            icfilt = ic.filter(filter=filt)
+            for pccd, fname in icfilt.ccds(return_fname=True):
+                pfile = os.path.join(reduxdir, fname)
+                outfile = os.path.join(reduxdir, 'fbp-{}'.format(fname))
+                if os.path.isfile(outfile) and not args.overwrite:
+                    print('Skipping existing file {}'.format(outfile))
+                else:
+                   fbpccd = ccdp.ccd_process(pccd, master_bias=masterbias, master_flat=masterflat,
+                                             add_keyword={
+                                                 'SUBBIAS': True,
+                                                 'FLATCOR': True,
+                                                 'BIASFILE': os.path.basename(masterbiasfile),
+                                                 'FLATFILE': os.path.basename(masterflatfile),
+                                                 })
+                                             #gain=config['ccd']['gain'],
+                                             #readnoise=config['ccd']['readnoise'])                
 
+                   print('  Writing {}'.format(outfile))
+                   fbpccd.write(outfile, overwrite=True)
 
 if __name__ == '__main__':
     main()

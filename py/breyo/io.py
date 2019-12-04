@@ -8,7 +8,7 @@ I/O code.
 import os
 import astropy.units as u
 
-def read_config():
+def read_config(verbose=False):
     import yaml
 
     # not sure why this doesn't work
@@ -16,8 +16,9 @@ def read_config():
     #configfile = pkg_resources.resource_filename('breyo', os.path.join('data', 'SBIG-STL-11000M.yaml'))
 
     configfile = os.path.join(os.getenv('BREYO_DIR'), 'py', 'breyo', 'data', 'SBIG-STL-11000M.yaml')
-    
-    print('Reading configuration file {}'.format(configfile))
+
+    if verbose:
+        print('Reading configuration file {}'.format(configfile))
     with open(configfile, 'r') as ff:
         params = yaml.safe_load(ff)
 
