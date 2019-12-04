@@ -8,6 +8,20 @@ I/O code.
 import os
 import astropy.units as u
 
+def get_rawdir(night):
+    return os.path.join(os.getenv('BREYO_DATA_DIR'), 'raw', night)
+    
+def get_reduxdir(night=None):
+    reduxdir = os.path.join(os.getenv('BREYO_DATA_DIR'), 'reduced')
+    if night:
+        reduxdir = os.path.join(reduxdir, night)
+    if not os.path.isdir(reduxdir):
+        os.makedirs(reduxdir, exist_ok=True)
+    calibdir = os.path.join(reduxdir, 'calib')
+    if not os.path.isdir(calibdir):
+        os.makedirs(calibdir, exist_ok=True)
+    return reduxdir, calibdir
+
 def read_config(verbose=False):
     import yaml
 

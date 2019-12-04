@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+
+"""Pipeline-reduce a single night of Breyo imaging.
+
+
+"""
+import os, glob, pdb
+import argparse
+import numpy as np
+import matplotlib.pyplot as plt
+
+import astropy.stats
+import astropy.units as u
+from astropy.table import Table, vstack
+from astropy.wcs import WCS
+from astropy.coordinates import SkyCoord
+
+import breyo.io
+                
+def main():
+    """
+
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', action='store_true', help='Be verbose.')
+    parser.add_argument('--overwrite', action='store_true', help='Overwrite existing files.')
+    args = parser.parse_args()
+
+    config = breyo.io.read_config()
+
+    keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
+
+    filters = ('B', 'V', 'R')
+    nights = ('2019-09-25')
+
+    # collect all the photometry we need
+    for onenight in np.atleast_1d(nights):
+        reduxdir, _ = breyo.io.get_reduxdir(night=onenight)
+
+        for filt in np.atleast_1d(filters):
+
+            catfiles = glob.glob(os.path.join(reduxdir, 'refstars-{}-*.fits'.format(filt)))
+
+            cat = []
+            for catfile in catfiles:
+                cat.append(Table(astropy.io.fits.getdata(catfile)))#, upper=True)))
+                #cat.append(Table.read(catfile))
+            cat = vstack(cat)
+
+            pdb.set_trace()
+
+
+    ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='afbp-*.fits')
+    if args.verbose:
+        print(ic.summary)
+
+    for filt in filters:
+
+        icfilt = ic.filter(filter=filt)
+        for hdu, fname in icfilt.hdus(return_fname=True):
+
+            imgwcs = WCS(hdu.header)
+            airmass, exptime = hdu.header['AIRMASS'], hdu.header['EXPTIME']
+            img = hdu.data / exptime # [electron/s]
+
+            # stars in the image
+            starsfile = os.path.join(reduxdir, 'stars-{}'.format(fname))
+            if not os.path.isfile(starsfile) or args.overwrite:
+                srcs = find_stars(img, exptime=exptime, nsigma=5,
+                                  fwhm=2.0, verbose=args.verbose)
+                print('Writing {} stars to {}'.format(len(srcs), starsfile))
+                srcs.write(starsfile, overwrite=True)
+            else:
+                srcs = Table.read(starsfile)
+                print('Read {} stars from {}'.format(len(srcs), starsfile))
+
+            # reference stars
+            refstarsfile = os.path.join(reduxdir, 'refstars-{}'.format(fname))
+            if not os.path.isfile(refstarsfile) or args.overwrite:
+                refsrcs = get_panstarrs_catalog(imgwcs, radius=0.3, verbose=args.verbose)
+                print('Writing {} reference stars to {}'.format(len(refsrcs), refstarsfile))
+                refsrcs.write(refstarsfile, overwrite=True)
+            else:
+                refsrcs = Table.read(refstarsfile)
+                print('Read {} refstars from {}'.format(len(refsrcs), refstarsfile))
+
+            # match them
+            rad = 2 * u.arcsec
+
+            radec_stars = imgwcs.all_pix2world(srcs['xcentroid']+1, srcs['ycentroid']+1, 1)
+            refcoord = SkyCoord(ra=refsrcs['raMean'] * u.deg, dec=refsrcs['decMean'] * u.deg)
+            coord = SkyCoord(ra=radec_stars[0]*u.deg, dec=radec_stars[1]*u.deg)
+
+            indx_ref, indx, d2d, _ = coord.search_around_sky(refcoord, rad)
+            print('Found {}/{} stars within {}'.format(len(indx_ref), len(srcs), rad))
+
+            ## derive the zeropoint(s)
+            #pdb.set_trace()
+            #instmag = srcs['mag'][indx] - 0.4 * airmass * kext[filt]
+            #ps_r = refsrcs['rMeanPSFMag'][indx_ref]
+
+if __name__ == '__main__':
+    main()
