@@ -62,7 +62,7 @@ def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False):
                                            #sort_by=[("asc", "rMeanPSFMag")]
 
     # http://legacysurvey.org/dr8/description/#photometry
-    gi = allcat['gMeanPSFMag'] - allcat['iMeanPSFMag']
+    gi = cat['gMeanPSFMag'] - cat['iMeanPSFMag']
     keep = np.where( (gi > 0.4) * (gi < 2.7) )[0]
     cat = cat[keep]
     

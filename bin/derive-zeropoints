@@ -17,6 +17,8 @@ from astropy.coordinates import SkyCoord
 
 import breyo.io
                 
+kext = {'B': 0.4, 'V': 0.2, 'R': 0.1}
+
 def main():
     """
 
@@ -47,8 +49,19 @@ def main():
                 #cat.append(Table.read(catfile))
             cat = vstack(cat)
 
-            pdb.set_trace()
+            instmag = (cat['mag'] - 2.5 * np.log10(cat['exptime']) - 0.4 * cat['mw_{}'.format(filt)])
+            #instmag = (cat['mag'] - 2.5 * np.log10(cat['exptime']) - 0.4 * kext[filt] * cat['airmass'] - 0.4 * cat['mw_{}'.format(filt)])
 
+            gmag = (cat['gMeanPSFMag'] - 0.4 * cat['mw_g'.format(filt)])
+            rmag = (cat['rMeanPSFMag'] - 0.4 * cat['mw_r'.format(filt)])
+            imag = (cat['iMeanPSFMag'] - 0.4 * cat['mw_i'.format(filt)])
+            zmag = (cat['zMeanPSFMag'] - 0.4 * cat['mw_z'.format(filt)])
+
+            pdb.set_trace()
+            
+            plt.scatter(gmag - rmag, gmag-instmag) ; plt.show()
+            plt.scatter(gmag - rmag, rmag-instmag) ; plt.show()
+            plt.scatter(rmag - imag, imag-instmag) ; plt.show()
 
     ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='afbp-*.fits')
     if args.verbose:

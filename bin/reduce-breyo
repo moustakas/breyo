@@ -7,6 +7,7 @@
 import os, pdb
 import argparse
 import numpy as np
+import numpy.ma as ma
 
 import astropy.stats
 import astropy.units as u
@@ -34,6 +35,11 @@ newfilt = {'Blue': 'B',
            }
 
 allfilt = ('B', 'V', 'R')
+
+# From Table 6 of https://arxiv.org/pdf/1012.4804.pdf
+# assume Landoldt and PanSTARRS filters and RV=3.1
+mwextcoeff = dict(B=3.626, V=2.742, R=2.169,
+                  g=3.172, r=2.271, i=1.682, z=1.322)
 
 kext = {'B': 0.4, 'V': 0.2, 'R': 0.1}
 
@@ -240,6 +246,7 @@ def main():
 
     # Gather up reference stars.
     if args.refstars:
+        from breyo.dust import SFDMap
         from breyo.photo import find_stars, get_panstarrs_catalog
 
         matchrad = 2 * u.arcsec
@@ -284,6 +291,17 @@ def main():
                 out.add_column(astropy.table.Column(data=np.repeat(hdu.header['DATE-OBS'], nstar),
                                                     name='date-obs'))
 
+                # add MW dust
+                out.add_column(astropy.table.Column(name='ebv', length=nstar, dtype='f4'))
+                out['ebv'] = SFDMap().ebv(out['raMean'], out['decMean'], unit=u.deg,
+                                          frame='icrs', scaling=1.0)
+                for filt in mwextcoeff.keys():
+                    ext = mwextcoeff[filt] * out['ebv']
+                    #out.add_column(astropy.table.Column(name='mw_transmission_{}'.format(filt),
+                    #                                    dtype='f4', data=ext))
+                    out.add_column(astropy.table.Column(name='mw_{}'.format(filt), dtype='f4', data=ext))
+
+                # write out
                 outhdu = astropy.io.fits.convenience.table_to_hdu(out)
                 outhdu.header['EXTNAME'] = 'REFSTARS'
                 for key in ('DATE-OBS', 'EXPTIME', 'AIRMASS', 'FILTER'):
