@@ -67,3 +67,52 @@ def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False):
     cat = cat[keep]
     
     return cat
+
+def reproject_one_image(hdu, pixscale=0.8):
+    """Little wrapper script to project (i.e., undistort) a distorted 
+    image onto a tangent plane.
+    
+    """
+    from astropy.wcs import WCS
+    from reproject import reproject_interp
+
+    img, hdr = hdu.data, hdu.header
+
+    dim = img.shape
+    imgwcs = WCS(hdr)
+
+    for ii, hdr1 in enumerate(hdr.cards):
+        try:
+            if 'Original key: "END"' in hdr1[1]:
+                cut = ii
+                break
+        except:
+            pass
+    newhdr = hdr[:cut]
+
+    # Create a header describing a tangent plane.
+    for key in ('WCSAXES', 'CTYPE1', 'CTYPE2', 'EQUINOX', 'LONPOLE', 'LATPOLE', 
+                'CRVAL1', 'CRVAL2', 'CRPIX1', 'CRPIX2', 'CUNIT1', 'CUNIT2',
+                'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2', 'IMAGEW', 'IMAGEH'):
+        hdr[key] = wcshdr[key]
+
+    # Tangent projection
+    #whdr = WCS(hdr)    
+    #corn = whdr.all_world2pix(whdr.all_pix2world(np.array([(1, 1), (1, dim[0]), (dim[1], dim[0]), (dim[1], 0)]), 1), 1))
+
+
+    hdr['NAXIS1'] = 2000
+    hdr['NAXIS2'] = 2000
+    hdr['CTYPE1'] = 'RA---TAN'
+    hdr['CTYPE2'] = 'DEC--TAN'
+    # update the pixel scale [arcsec/pix] to the desired constant with 
+    # no rotation
+    hdr['CD1_2'] = 0.0
+    hdr['CD2_1'] = 0.0
+    hdr['CD1_1'] = -pixscale / 3600.0
+    hdr['CD2_2'] =  pixscale / 3600.0
+
+    # now project
+    img_proj, footprint = reproject_interp((img, wcshdr), hdr)
+
+    return footprint, img_proj, hdr

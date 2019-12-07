@@ -59,6 +59,7 @@ def main():
     parser.add_argument('--astrometry', action='store_true', help='Solve the astrometry.')
     parser.add_argument('--refstars', action='store_true', help='Generate reference photometric catalog.')
     parser.add_argument('--photcalib', action='store_true', help='Photometrically calibrate.')
+    parser.add_argument('--reproject', action='store_true', help='(Re)project onto a tangent plane.')
     parser.add_argument('--stack', action='store_true', help='Build image stacks.')
 
     parser.add_argument('--verbose', action='store_true', help='Be verbose.')
@@ -76,7 +77,8 @@ def main():
     # https://mwcraig.github.io/ccd-as-book/08-00-Image-masking.html
     if args.preproc:
         keys = ['naxis1', 'naxis2', 'imagetyp', 'filter', 'exptime']
-        ic = ccdp.ImageFileCollection(rawdir, keywords=keys, glob_include='*.fit*')
+        ic = ccdp.ImageFileCollection(rawdir, keywords=keys, glob_include='*.fit*',
+                                      glob_exclude='*test*.fit')
         print('Parsing {} files in {}'.format(len(ic.files), rawdir))
         if args.verbose:
             print(ic.summary)
@@ -93,6 +95,10 @@ def main():
 
             if hdr['NAXIS2'] < 1000:
                 print('Subframe issue in image {}'.format(rawfile))
+                continue
+
+            if hdr['XBINNING'] != 2:
+                print('Cannot yet handle unbinned imaging.')
                 continue
 
             # push these cases to a function
@@ -113,7 +119,11 @@ def main():
                     hdr['FILTER'] = newfilt[hdr['FILTER']]
 
                 # ToDo: generalize the trimming!
-                img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
+                _img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
+                img = ccdp.create_deviation(_img, gain=config['ccd']['gain'],
+                                            readnoise=config['ccd']['readnoise'],
+                                            disregard_nan=True)
+                
                 img = ccdp.trim_image(img[:, 50:], add_keyword={'TRIM': True})
                 img = ccdp.gain_correct(img, gain=config['ccd']['gain'],
                                         add_keyword={'GAINCOR': True})
@@ -217,7 +227,8 @@ def main():
         configfile = os.path.join(os.getenv('BREYO_DATA_DIR'), 'astrometry.net', 'index-5000', 'cfg')
 
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='fbp-M81*.fits')
+        #ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='fbp-*.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='fbp-Lutetia-0020r.fits')
         for fname in ic.files_filtered(include_path=True):
 
             outfile = os.path.join(reduxdir, 'a{}'.format(os.path.basename(fname)))
@@ -232,17 +243,19 @@ def main():
 
                 cmd =  'solve-field {scifile} --config {configfile} --ra {ra} --dec {dec} '
                 cmd += '--scale-low 0.5 --scale-high 1.0 --scale-units arcsecperpix '
-                cmd += '--radius 0.5 --tweak-order 2 --crpix-center --nsigma 10 --objs 100 '
+                cmd += '--radius 0.5 --tweak-order 2 --crpix-center --nsigma 20 ' # --objs 100 '
                 cmd += '--solved none --index-xyls none --match none '
                 cmd += '--rdls none --corr none --axy {axyfile} ' # --temp-axy
-                cmd += '--new-fits {outfile} ' # --wcs {wcsfile} '
-                cmd += '--no-verify --no-plots --overwrite ' 
+                cmd += '--new-fits {outfile} --downsample 4 ' # --wcs {wcsfile} '
+                cmd += '--no-verify --no-plots --overwrite '
                 cmd = cmd.format(scifile=fname, outfile=outfile, axyfile=axyfile,
                                  #wcsfile=wcsfile,
                                  configfile=configfile, ra=ra, dec=dec)
                 if args.verbose:
                     print(cmd)
                 err = subprocess.call(cmd.split())
+
+                pdb.set_trace()
 
     # Gather up reference stars.
     if args.refstars:
@@ -325,48 +338,41 @@ def main():
                 airmass, exptime = hdu.header['AIRMASS'], hdu.header['EXPTIME']
                 img = hdu.data / exptime # [electron/s]
 
-                # stars in the image
-                starsfile = os.path.join(reduxdir, 'stars-{}'.format(fname))
-                if not os.path.isfile(starsfile) or args.overwrite:
-                    srcs = find_stars(img, exptime=exptime, nsigma=5,
-                                      fwhm=2.0, verbose=args.verbose)
-                    print('Writing {} stars to {}'.format(len(srcs), starsfile))
-                    srcs.write(starsfile, overwrite=True)
-                else:
-                    srcs = astropy.table.Table.read(starsfile)
-                    print('Read {} stars from {}'.format(len(srcs), starsfile))
-
-                # reference stars
-                # https://astroquery.readthedocs.io/en/latest/mast/mast.html
-                # https://outerspace.stsci.edu/display/PANSTARRS/PS1+MeanObjectView+table+fields
-                
-                refstarsfile = os.path.join(reduxdir, 'refstars-{}'.format(fname))
-                if not os.path.isfile(refstarsfile) or args.overwrite:
-                    refsrcs = get_panstarrs_catalog(imgwcs, radius=0.3, verbose=args.verbose)
-                    print('Writing {} reference stars to {}'.format(len(refsrcs), refstarsfile))
-                    refsrcs.write(refstarsfile, overwrite=True)
-                else:
-                    refsrcs = Table.read(refstarsfile)
-                    print('Read {} refstars from {}'.format(len(refsrcs), refstarsfile))
-
-                # match them
-                rad = 2 * u.arcsec
-
-                radec_stars = imgwcs.all_pix2world(srcs['xcentroid']+1, srcs['ycentroid']+1, 1)
-                refcoord = SkyCoord(ra=refsrcs['raMean'] * u.deg, dec=refsrcs['decMean'] * u.deg)
-                coord = SkyCoord(ra=radec_stars[0]*u.deg, dec=radec_stars[1]*u.deg)
-                
-                indx_ref, indx, d2d, _ = coord.search_around_sky(refcoord, rad)
-                print('Found {}/{} stars within {}'.format(len(indx_ref), len(srcs), rad))
-
-                # write out
-                
                 pdb.set_trace()
 
-                ## derive the zeropoint(s)
-                #pdb.set_trace()
-                #instmag = srcs['mag'][indx] - 0.4 * airmass * kext[filt]
-                #ps_r = refsrcs['rMeanPSFMag'][indx_ref]
+    if args.reproject:
+        from breyo.photo import reproject_one_image
+
+        keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='cafbp-*.fits')
+        if len(ic.files) == 0:
+            ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='afbp-M82*.fits')
+        
+        if args.verbose:
+            print(ic.summary)
+
+        # https://ccdproc.readthedocs.io/en/latest/image_combination.html#clipping
+        from ccdproc import wcs_project
+        reprojected_image = wcs_project(input_image, target_wcs)
+        reprojected = []
+        for img in my_list_of_images:
+            new_image = wcs_project(img, target_wcs)
+            reprojected.append(new_image)
+
+        combiner = Combiner(reprojected)
+        stacked_image = combiner.average_combine()
+
+        for hdu, fname in ic.hdus(return_fname=True):
+            outfile = os.path.join(reduxdir, 'u{}'.format(os.path.basename(fname)))
+            if os.path.isfile(outfile) and not args.overwrite:
+                print('Skipping existing file {}'.format(outfile))
+            else:
+                footprint, newimg, newhdr = reproject_one_image(hdu, pixscale=0.8)
+
+                print('  Writing {}'.format(outfile))
+                newimg.write(outfile, header=newhdr, overwrite=True)
+
+                pdb.set_trace()
 
 if __name__ == '__main__':
     main()
