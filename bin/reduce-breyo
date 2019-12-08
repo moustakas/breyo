@@ -338,7 +338,7 @@ def main():
 
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
         #ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-*.fits')
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-M82-0001b.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-*.fits')
         for fname in ic.files_filtered(include_path=True):
 
             outfile = os.path.join(reduxdir, 'a{}'.format(os.path.basename(fname)))
