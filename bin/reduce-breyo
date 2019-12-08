@@ -6,6 +6,9 @@ The uncertainty stuff with CCDproc is a mess (mostly having to do with units),
 plus what I really want is to create and store the inverse variance image, so
 let's leave that for now.
 
+Great reference code:
+https://github.com/rgbIAA/reduceccd/blob/master/reduceccd/reduceccd.py
+
 """
 import os, pdb
 import argparse
@@ -15,7 +18,8 @@ import numpy.ma as ma
 import astropy.stats
 import astropy.units as u
 import astropy.table
-from astropy.wcs import WCS
+import astropy.io
+from astropy import wcs
 from astropy.coordinates import SkyCoord
 from astropy.nddata import CCDData
 
@@ -333,8 +337,8 @@ def main():
         configfile = os.path.join(os.getenv('BREYO_DATA_DIR'), 'astrometry.net', 'index-5000', 'cfg')
 
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-*.fits')
-        #ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-Lutetia-0001r.fits')
+        #ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-*.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-M82-0001b.fits')
         for fname in ic.files_filtered(include_path=True):
 
             outfile = os.path.join(reduxdir, 'a{}'.format(os.path.basename(fname)))
@@ -379,7 +383,9 @@ def main():
             if os.path.isfile(outfile) and not args.overwrite:
                 print('Skipping existing file {}'.format(outfile))
             else:
-                imgwcs = WCS(hdu.header)
+                # For some reason, ccdproc doesn't read the full astrometry.net header.
+                hdr = astropy.io.fits.getheader(os.path.join(reduxdir, fname))
+                imgwcs = wcs.WCS(hdr)
                 img = hdu.data # [electron]
 
                 # find stars in the image
@@ -446,43 +452,95 @@ def main():
 
     if args.reproject:
         # https://ccdproc.readthedocs.io/en/latest/image_combination.html#clipping
+        from reproject import reproject_interp
+        #from ccdproc import wcs_project
         #from breyo.photo import reproject_one_image
-        from ccdproc import wcs_project
+        
+        pixscale = 0.8 # [arcsec/pixel]
+        imgsize = 2500 # [pixels]
 
         # this step should happen after photometric calibration (prefix "c")... 
-
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='czafbp-*.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='cazfbp-*.fits')
         if len(ic.files) == 0:
-            ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zafbp-M82*.fits')
+            ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='azfbp-*.fits')
         
-        if args.verbose:
-            print(ic.summary)
+        # organize by unique object
+        for obj in set(ic.summary['object']):
+            icobj = ic.filter(object=obj)
+            if args.verbose:
+                print(icobj.summary)
 
-        
+            # get the average CRVAL
+            allra, alldec = [], []
+            for fname in icobj.files:
+                hdr = astropy.io.fits.getheader(fname)
+                allra.append(hdr['CRVAL1'])
+                alldec.append(hdr['CRVAL2'])
 
-        
-        
-        reprojected_image = wcs_project(input_image, target_wcs)
-        reprojected = []
-        for img in my_list_of_images:
-            new_image = wcs_project(img, target_wcs)
-            reprojected.append(new_image)
+            # should include a warning for wonky coordinates!
+            crval = np.array([np.mean(allra), np.mean(alldec)])
+            print('Working on {}, mean RA, Dec = {:.5f}, {:.5f}'.format(obj, crval[0], crval[1]))
 
-        combiner = Combiner(reprojected)
-        stacked_image = combiner.average_combine()
+            for ccd, fname in icobj.ccds(return_fname=True):
+                outfile = os.path.join(reduxdir, 'u{}'.format(fname))
+                if os.path.isfile(outfile) and not args.overwrite:
+                        print('Skipping existing file {}'.format(outfile))
+                else:
+                    # For some reason, ccdproc doesn't read the full astrometry.net header.
+                    hdr = astropy.io.fits.getheader(os.path.join(reduxdir, fname))
+                    imgwcs = wcs.WCS(hdr)
+                    #imgwcs = wcs.WCS(ccd.header)
 
-        for hdu, fname in ic.hdus(return_fname=True):
-            outfile = os.path.join(reduxdir, 'u{}'.format(os.path.basename(fname)))
-            if os.path.isfile(outfile) and not args.overwrite:
-                print('Skipping existing file {}'.format(outfile))
-            else:
-                footprint, newimg, newhdr = reproject_one_image(hdu, pixscale=0.8)
+                    for ii, hdr1 in enumerate(hdr.cards):
+                        try:
+                            if 'Original key: "END"' in hdr1[1]:
+                                cut = ii
+                                break
+                        except:
+                            pass
+                        
+                    # Need to figure out how to do this properly, including how
+                    # to set 'latpole' to zero correctly!
+                    if False:
+                        ww = wcs.WCS(naxis=2)
+                        ww.wcs.ctype = ['RA---TAN', 'DEC--TAN']
+                        ww.wcs.crval = crval
+                        ww.wcs.cdelt = np.array([-pixscale, pixscale]) / 3600 # [degree/pixel]
+                        ww.wcs.crpix = np.array([imgsize, imgsize]) // 2.0 + 0.5
+                        newhdr = hdr[:cut] + ww.to_header()
 
-                print('  Writing {}'.format(outfile))
-                newimg.write(outfile, header=newhdr, overwrite=True)
+                    newhdr = hdr[:cut]
+                    newhdr['NAXIS1'] = imgsize
+                    newhdr['NAXIS2'] = imgsize
+                    newhdr['WCSAXES'] = 2
+                    newhdr['CTYPE1'] = 'RA---TAN'
+                    newhdr['CTYPE2'] = 'DEC--TAN'
+                    newhdr['CRPIX1'] = imgsize // 2.0 + 0.5
+                    newhdr['CRPIX2'] = imgsize // 2.0 + 0.5
+                    newhdr['CRVAL1'] = crval[0]
+                    newhdr['CRVAL2'] = crval[1]
+                    newhdr['CUNIT1'] = 'deg'
+                    newhdr['CUNIT2'] = 'deg'
+                    newhdr['LONPOLE'] = 180.0
+                    newhdr['LATPOLE'] = 0.0
+                    newhdr['CD1_2'] = 0.0
+                    newhdr['CD2_1'] = 0.0
+                    newhdr['CD1_1'] = -pixscale / 3600.0
+                    newhdr['CD2_2'] =  pixscale / 3600.0
+                    newhdr['RADESYSa'] = 'ICRS'
 
-                pdb.set_trace()
+                    try:
+                        #footprint, newimg, newhdr = reproject_one_image(hdu, pixscale=0.8)
+                        newimg, footprint = reproject_interp((ccd.data, hdr), newhdr)
+                        if np.sum(footprint) == 0:
+                            print('  Failed to reproject {}'.format(fname))
+                        else:
+                            newimg = CCDData(newimg, header=newhdr, unit=newhdr['BUNIT'])
+                            print('  Writing {}'.format(outfile))
+                            newimg.write(outfile, overwrite=True)
+                    except:
+                        print('  Failed to reproject {}'.format(fname))
 
 if __name__ == '__main__':
     main()
