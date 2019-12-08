@@ -2,6 +2,9 @@
 
 """Pipeline-reduce a single night of Breyo imaging.
 
+The uncertainty stuff with CCDproc is a mess (mostly having to do with units),
+plus what I really want is to create and store the inverse variance image, so
+let's leave that for now.
 
 """
 import os, pdb
@@ -55,7 +58,10 @@ def main():
     parser.add_argument('--preproc', action='store_true', help='Preprocess the raw data.')
     parser.add_argument('--masterbias', action='store_true', help='Build the master bias frame.')
     parser.add_argument('--masterflats', action='store_true', help='Build the master (sky)flats.')
+    parser.add_argument('--masterdarks', action='store_true', help='Build the master darks.')
+
     parser.add_argument('--reduceall', action='store_true', help='Process the science images.')
+    parser.add_argument('--crzap', action='store_true', help='Zap cosmic rays')
     parser.add_argument('--astrometry', action='store_true', help='Solve the astrometry.')
     parser.add_argument('--refstars', action='store_true', help='Generate reference photometric catalog.')
     parser.add_argument('--photcalib', action='store_true', help='Photometrically calibrate.')
@@ -118,15 +124,21 @@ def main():
                 if 'FILTER' in hdr:
                     hdr['FILTER'] = newfilt[hdr['FILTER']]
 
-                # ToDo: generalize the trimming!
-                _img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
-                img = ccdp.create_deviation(_img, gain=config['ccd']['gain'],
-                                            readnoise=config['ccd']['readnoise'],
-                                            disregard_nan=True)
+                img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
+
+                # Do not create the uncertainty array here so we're not carrying
+                # around extra bits; do it below in --reduceall (just for the
+                # science images, obviously).
                 
-                img = ccdp.trim_image(img[:, 50:], add_keyword={'TRIM': True})
+                #if imtype == 'object':
+                #    img = ccdp.create_deviation(img, gain=config['ccd']['gain'],
+                #                                readnoise=config['ccd']['readnoise'],
+                #                                disregard_nan=True, add_keyword={'CREATVAR': True})
                 img = ccdp.gain_correct(img, gain=config['ccd']['gain'],
                                         add_keyword={'GAINCOR': True})
+
+                # ToDo: generalize the trimming!
+                img = ccdp.trim_image(img[:, 50:], add_keyword={'TRIM': True})
 
                 print('Writing {}'.format(outfile))
                 img.write(outfile, overwrite=True)
@@ -139,46 +151,97 @@ def main():
             ic = ccdp.ImageFileCollection(calibdir, keywords=keys, glob_include='bias*.fits')
             if args.verbose:
                 print(ic.summary)
-                
-            nbias = len(ic.files)
+
+            biasfiles = ic.files_filtered(include_path=True)
+            nbias = len(biasfiles)
             print('Building master bias from {} images in {}'.format(nbias, calibdir))
 
-            masterbias = ccdp.combine(ic.files_filtered(include_path=True),
+            rbias = []
+            for biasfile in biasfiles:
+                bias = CCDData.read(biasfile)
+                rbias.append(bias)
+
+            masterbias = ccdp.combine(rbias,
                                       method='average', sigma_clip=True,
                                       sigma_clip_low_thresh=5, 
                                       sigma_clip_high_thresh=5,
                                       sigma_clip_func=np.ma.median,
                                       sigma_clip_dev_func=astropy.stats.mad_std)
+            masterbias.data = masterbias.data.astype('f4')
             masterbias.header['NBIAS'] = nbias
             masterbias.header['COMBINED'] = True
 
             print('  Writing {}'.format(masterbiasfile))
             masterbias.write(masterbiasfile, overwrite=True)
 
-    if args.masterflats:
+    if args.masterdarks:
         print('Reading {}'.format(masterbiasfile))
         masterbias = CCDData.read(masterbiasfile)
 
-        ic = ccdp.ImageFileCollection(calibdir, keywords='*', glob_include='skyflat*.fits')
-        for filt in set(ic.summary['filter']):
-            masterflatfile = os.path.join(reduxdir, 'master-flat-{}.fits'.format(filt))
-            if os.path.isfile(masterflatfile) and not args.overwrite:
-                print('Skipping existing master flat {}'.format(masterflatfile))
-            else:
-                icflats = ic.filter(imagetyp='flat', filter=filt)
-                nflat = len(icflats.files)
-                print('Building {} masterflat from {} images found in {}'.format(filt, nflat, calibdir))
+        keys = ['file', 'imagetyp', 'exptime', 'filter']
+        ic = ccdp.ImageFileCollection(calibdir, keywords=keys, glob_include='dark*.fits')
+        if args.verbose:
+            print(ic.summary)
+        exptimes = sorted(set(ic.summary['exptime']))
 
-                rflats = []
-                for ccd in icflats.ccds():
-                    rflats.append( ccdp.subtract_bias(ccd, masterbias, add_keyword={'SUBBIAS': True}) )
+        for exptime in exptimes:
+            masterdarkfile = os.path.join(reduxdir, 'master-dark-{:.1f}s.fits'.format(exptime))
+            if os.path.isfile(masterdarkfile) and not args.overwrite:
+                print('Skipping existing master dark {}'.format(masterdarkfile))
+            else:
+                darkfiles = ic.files_filtered(exptime=exptime, include_path=True)
+                ndark = len(darkfiles)
+                print('Building {:.1f} sec masterdark from {} images found in {}'.format(exptime, ndark, calibdir))
+
+                rdarks = []
+                for darkfile in darkfiles:
+                    dark = CCDData.read(darkfile)
+                    dark = ccdp.subtract_bias(dark, masterbias, add_keyword={'SUBBIAS': True})
+                    rdarks.append( dark )
                     
-                masterflat = ccdp.combine(rflats, method='average', scale=_inv_median,
+                masterdark = ccdp.combine(rdarks,
+                                          method='average',
                                           sigma_clip=True,
                                           sigma_clip_low_thresh=5, 
                                           sigma_clip_high_thresh=5,
                                           sigma_clip_func=np.ma.median,
                                           sigma_clip_dev_func=astropy.stats.mad_std)
+                masterdark.data = masterdark.data.astype('f4')
+                masterdark.header['NDARK'] = ndark
+                masterdark.header['COMBINED'] = True
+
+                print('  Writing {}'.format(masterdarkfile))
+                masterdark.write(masterdarkfile, overwrite=True)
+
+    if args.masterflats:
+        print('Reading {}'.format(masterbiasfile))
+        masterbias = CCDData.read(masterbiasfile)
+
+        keys = ['file', 'imagetyp', 'exptime', 'filter']
+        ic = ccdp.ImageFileCollection(calibdir, keywords=keys, glob_include='skyflat*.fits')
+        for filt in set(ic.summary['filter']):
+            masterflatfile = os.path.join(reduxdir, 'master-flat-{}.fits'.format(filt))
+            if os.path.isfile(masterflatfile) and not args.overwrite:
+                print('Skipping existing master flat {}'.format(masterflatfile))
+            else:
+                flatfiles = ic.files_filtered(imagetyp='flat', filter=filt, include_path=True)
+                nflat = len(flatfiles)
+                print('Building {} masterflat from {} images found in {}'.format(filt, nflat, calibdir))
+
+                rflats = []
+                for flatfile in flatfiles:
+                    flat = CCDData.read(flatfile)
+                    flat = ccdp.subtract_bias(flat, masterbias, add_keyword={'SUBBIAS': True})
+                    rflats.append(flat)
+                    
+                masterflat = ccdp.combine(rflats,
+                                          method='average', scale=_inv_median,
+                                          sigma_clip=True,
+                                          sigma_clip_low_thresh=5, 
+                                          sigma_clip_high_thresh=5,
+                                          sigma_clip_func=np.ma.median,
+                                          sigma_clip_dev_func=astropy.stats.mad_std)
+                masterflat.data = masterflat.data.astype('f4')
                 masterflat.header['NFLAT'] = nflat
                 masterflat.header['COMBINED'] = True
 
@@ -202,24 +265,67 @@ def main():
             masterflat = CCDData.read(masterflatfile)
             
             icfilt = ic.filter(filter=filt)
-            for pccd, fname in icfilt.ccds(return_fname=True):
-                pfile = os.path.join(reduxdir, fname)
+            #fnames = ic.files_filtered(filter=filt)#, include_path=True)
+            #for fname in fnames:
+            for ccd, fname in icfilt.ccds(return_fname=True):
                 outfile = os.path.join(reduxdir, 'fb{}'.format(fname))
                 if os.path.isfile(outfile) and not args.overwrite:
                     print('Skipping existing file {}'.format(outfile))
                 else:
-                   fbpccd = ccdp.ccd_process(pccd, master_bias=masterbias, master_flat=masterflat,
-                                             add_keyword={
-                                                 'SUBBIAS': True,
-                                                 'FLATCOR': True,
-                                                 'BIASFILE': os.path.basename(masterbiasfile),
-                                                 'FLATFILE': os.path.basename(masterflatfile),
-                                                 })
-                                             #gain=config['ccd']['gain'],
-                                             #readnoise=config['ccd']['readnoise'])                
+                    # deal with uncertainties later
+                    #img = CCDData.read(os.path.join(reduxdir, fname))
+                    #img.data = img.divide(config['ccd']['gain'])
+                    #img = ccdp.create_deviation(img, gain=config['ccd']['gain'],
+                    #                            readnoise=config['ccd']['readnoise'],
+                    #                            disregard_nan=True, add_keyword={'CREATVAR': True})
+                    #img.data = img.data.multiply(config['ccd']['gain'])
 
-                   print('  Writing {}'.format(outfile))
-                   fbpccd.write(outfile, overwrite=True)
+                    #img = ccdp.subtract_bias(img, masterbias,
+                    #                         add_keyword={
+                    #                             'SUBBIAS': True,
+                    #                             'BIASFILE': os.path.basename(masterbiasfile),
+                    #                             })
+                    #img = ccdp.flat_correct(img, masterflat, 
+                    #                        add_keyword={
+                    #                            'FLATCOR': True,
+                    #                            'FLATFILE': os.path.basename(masterflatfile),
+                    #                            })
+                                        
+                    outccd = ccdp.ccd_process(ccd,
+                                              gain_corrected=True,
+                                              #error=True,
+                                              min_value=0.9,
+                                              #gain=config['ccd']['gain'],
+                                              #readnoise=config['ccd']['readnoise'],
+                                              master_bias=masterbias,
+                                              master_flat=masterflat,
+                                              add_keyword={
+                                                  'CREATVAR': True,
+                                                  'SUBBIAS': True,
+                                                  'FLATCOR': True,
+                                                  'BIASFILE': os.path.basename(masterbiasfile),
+                                                  'FLATFILE': os.path.basename(masterflatfile),
+                                                  })
+                    print('  Writing {}'.format(outfile))
+                    outccd.write(outfile, overwrite=True)
+
+    if args.crzap:
+        keys = ['file', 'naxis1', 'naxis2', 'object', 'imagetyp', 'filter', 'exptime']
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='fbp-*.fits')
+                                      
+        if args.verbose:
+            print(ic.summary)
+        
+        for ccd, fname in ic.ccds(return_fname=True):
+            outfile = os.path.join(reduxdir, 'z{}'.format(fname))
+            if os.path.isfile(outfile) and not args.overwrite:
+                print('Skipping existing file {}'.format(outfile))
+            else:
+               zccd = ccdp.cosmicray_lacosmic(ccd, sigclip=7, verbose=args.verbose)#,
+                                              #readnoise=config['ccd']['readnoise'])
+
+               print('  Writing {}'.format(outfile))
+               zccd.write(outfile, overwrite=True)
 
     if args.astrometry:
         import subprocess
@@ -227,8 +333,8 @@ def main():
         configfile = os.path.join(os.getenv('BREYO_DATA_DIR'), 'astrometry.net', 'index-5000', 'cfg')
 
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
-        #ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='fbp-*.fits')
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='fbp-Lutetia-0020r.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-*.fits')
+        #ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zfbp-Lutetia-0001r.fits')
         for fname in ic.files_filtered(include_path=True):
 
             outfile = os.path.join(reduxdir, 'a{}'.format(os.path.basename(fname)))
@@ -243,10 +349,10 @@ def main():
 
                 cmd =  'solve-field {scifile} --config {configfile} --ra {ra} --dec {dec} '
                 cmd += '--scale-low 0.5 --scale-high 1.0 --scale-units arcsecperpix '
-                cmd += '--radius 0.5 --tweak-order 2 --crpix-center --nsigma 20 ' # --objs 100 '
+                cmd += '--radius 0.5 --tweak-order 2 --crpix-center --nsigma 10 --objs 100 '
                 cmd += '--solved none --index-xyls none --match none '
                 cmd += '--rdls none --corr none --axy {axyfile} ' # --temp-axy
-                cmd += '--new-fits {outfile} --downsample 4 ' # --wcs {wcsfile} '
+                cmd += '--new-fits {outfile} --downsample 2 ' # --wcs {wcsfile} '
                 cmd += '--no-verify --no-plots --overwrite '
                 cmd = cmd.format(scifile=fname, outfile=outfile, axyfile=axyfile,
                                  #wcsfile=wcsfile,
@@ -254,8 +360,6 @@ def main():
                 if args.verbose:
                     print(cmd)
                 err = subprocess.call(cmd.split())
-
-                pdb.set_trace()
 
     # Gather up reference stars.
     if args.refstars:
@@ -265,7 +369,7 @@ def main():
         matchrad = 2 * u.arcsec
 
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='afbp-*.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zafbp-*.fits')
         if args.verbose:
             print(ic.summary)
 
@@ -325,7 +429,7 @@ def main():
 
     if args.photcalib:
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='afbp-*.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zafbp-*.fits')
         if args.verbose:
             print(ic.summary)
 
@@ -341,18 +445,24 @@ def main():
                 pdb.set_trace()
 
     if args.reproject:
-        from breyo.photo import reproject_one_image
+        # https://ccdproc.readthedocs.io/en/latest/image_combination.html#clipping
+        #from breyo.photo import reproject_one_image
+        from ccdproc import wcs_project
+
+        # this step should happen after photometric calibration (prefix "c")... 
 
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='cafbp-*.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='czafbp-*.fits')
         if len(ic.files) == 0:
-            ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='afbp-M82*.fits')
+            ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zafbp-M82*.fits')
         
         if args.verbose:
             print(ic.summary)
 
-        # https://ccdproc.readthedocs.io/en/latest/image_combination.html#clipping
-        from ccdproc import wcs_project
+        
+
+        
+        
         reprojected_image = wcs_project(input_image, target_wcs)
         reprojected = []
         for img in my_list_of_images:
