@@ -5,8 +5,10 @@ breyo.qa
 Plotting code.
 
 """
+import matplotlib.pyplot as plt
+
 def display_image(img, minclip=5, maxclip=95, label=None, cmap='Greys_r', 
-                  srcs=None, projection=None, calibrated=False):
+                  srcs=None, projection=None, calibrated=False, png=None):
     """Simple wrapper to display an image.
     
     """
@@ -50,6 +52,10 @@ def display_image(img, minclip=5, maxclip=95, label=None, cmap='Greys_r',
             c.set_label(r'Intensity ($e^{-}/s$)')
         else:
             c.set_label('Intensity (ADU)')
+
+    if png:
+        print('Writing {}'.format(png))
+        fig.savefig(png)
 
 def qa_background():
     med, sig = bkg.background_median, bkg.background_rms_median

@@ -28,6 +28,7 @@ export CAIRO_INC=-I/usr/local/include/cairo
 cd /usr/local/share
 git clone https://github.com/dstndstn/astrometry.net
 cd astrometry.net
+ln -s /usr/local/include/netpbm netpbm
 make
 make extra
 make install INSTALL_DIR=/usr/local/astrometry
