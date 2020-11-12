@@ -435,7 +435,7 @@ def main():
 
     if args.photcalib:
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
-        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='zafbp-*.fits')
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='azfbp-*.fits')
         if args.verbose:
             print(ic.summary)
 
