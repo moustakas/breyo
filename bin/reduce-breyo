@@ -444,7 +444,7 @@ def main():
             icfilt = ic.filter(filter=filt)
             for hdu, fname in icfilt.hdus(return_fname=True):
 
-                imgwcs = WCS(hdu.header)
+                imgwcs = wcs.WCS(hdu.header)
                 airmass, exptime = hdu.header['AIRMASS'], hdu.header['EXPTIME']
                 img = hdu.data / exptime # [electron/s]
 
