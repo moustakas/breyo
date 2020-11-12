@@ -5,6 +5,9 @@ replace RA and DEC with provided values
 
 example usage:
 
+python ~/github/breyo/py/breyo/fixcoords.py --filestring zfbp-M39 --ra '21 31 48' --dec '48 26 00'
+
+This will update all files zfbp-M39*.fits
 
 '''
 
@@ -27,9 +30,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     matchstring = args.filestring+'*.fits'
-    print(matchstring)
-    print(args.ra)
-    print(args.dec)    
+    #print(matchstring)
+    #print(args.ra)
+    #print(args.dec)    
     
     if args.filestring is not None:
         files = glob.glob(matchstring)
