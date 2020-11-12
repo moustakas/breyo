@@ -52,7 +52,17 @@ cd astrometry.net
 mv 5000 index-5000
 ```
 
+## Setting Up Data
 
+The program will assume that the raw data is in BREYO_DATA_DIR/raw, and that each night is stored in a directory.  For example:
+```
+/mnt/qnap_home/rfinn/telescope_reduction/raw/2020-11-09
+```
+
+The program will create BREYO_DATA_DIR/reduced, added a new directory to store the reduced data.  For example:
+```
+/mnt/qnap_home/rfinn/telescope_reduction/reduced/2020-11-09
+```
 
 
 ## Authors
