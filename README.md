@@ -34,10 +34,25 @@ make extra
 make install INSTALL_DIR=/usr/local/astrometry
 ```
 
+You also need to have the Schlegel dust map installed.  https://github.com/kbarbary/sfdmap/
+
+```
+pip install sfdmap
+
+wget https://github.com/kbarbary/sfddata/archive/master.tar.gz
+tar xzf master.tar.gz
+cd sfddata-master
+mkdir maps
+cp *.fits maps/.
+
+```
+
+
 Setting up environment variables: update your .profile file to include
 ```
 export PYTHONPATH=/usr/local/anaconda3/bin/:/home/rfinn/github/breyo/bin/:/home/rfinn/github/breyo/py/
 export BREYO_DATA_DIR=/mnt/qnap_home/rfinn/telescope-reduction/
+export DUST_DIR=/mnt/qnap_home/rfinn/telescope-reduction/sfddata-master/
 export BREYO_DIR=/home/rfinn/github/breyo/
 ```
 
