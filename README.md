@@ -34,6 +34,26 @@ make extra
 make install INSTALL_DIR=/usr/local/astrometry
 ```
 
+Setting up environment variables: update your .profile file to include
+```
+export PYTHONPATH=/usr/local/anaconda3/bin/:/home/rfinn/github/breyo/bin/:/home/rfinn/github/breyo/py/
+export BREYO_DATA_DIR=/mnt/qnap_home/rfinn/telescope-reduction/
+export BREYO_DIR=/home/rfinn/github/breyo/
+```
+
+After astromety.net is installed, get the index files.  From your BREYO_DATA_DIR
+```
+wget --recursive --no-parent http://data.astrometry.net/5000/
+```
+When the download finishes, rename two directories:
+```
+mv data.astrometry.net astrometry.net
+cd astrometry.net
+mv 5000 index-5000
+```
+
+
+
 
 ## Authors
 
