@@ -26,12 +26,13 @@ if __name__ == '__main__':
     parser.add_argument('--deckeyword', dest = 'deckey', default = 'OBJCTDEC', help = 'header keyword for DEC.  Default is OBJCTDEC')    
 
     args = parser.parse_args()
-    print(args.filestring+'*.fits')
+    matchstring = args.filestring+'*.fits'
+    print(matchstring)
     print(args.ra)
     print(args.dec)    
     
     if args.filestring is not None:
-        files = glob.glob(args.filestring)
+        files = glob.glob(matchstring)
         print('got ',len(files),' files to update')
         if args.ra is not None:
             for f in files:
