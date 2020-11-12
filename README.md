@@ -64,6 +64,9 @@ The program will create BREYO_DATA_DIR/reduced, added a new directory to store t
 /mnt/qnap_home/rfinn/telescope_reduction/reduced/2020-11-09
 ```
 
+## Running the reduction pipeline
+
+
 
 ## Authors
 
