@@ -52,6 +52,19 @@ cd astrometry.net
 mv 5000 index-5000
 ```
 
+Create the config file
+
+```
+cd astrometry.net
+cat index-5000/cfg
+#add_path ${BREYO_DATA_DIR}/astrometry.net/index-5000
+add_path /Users/ioannis/research/data/breyo/astrometry.net/index-5000
+#autoindex
+indexset 5000
+inparallel
+
+```
+
 ## Setting Up Data
 
 The program will assume that the raw data is in BREYO_DATA_DIR/raw, and that each night is stored in a directory.  For example:
