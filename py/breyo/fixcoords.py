@@ -29,6 +29,7 @@ if __name__ == '__main__':
 
     if args.filestring is not None:
         files = glob.glob(args.filestring)
+        print('got ',len(files),' files to update')
         if args.ra is not None:
             for f in files:
                 data,header = fits.getdata(f,header=True)
