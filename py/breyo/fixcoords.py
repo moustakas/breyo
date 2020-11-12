@@ -22,8 +22,8 @@ if __name__ == '__main__':
     parser.add_argument('--filestring', dest = 'filestring', default=None, help = 'filestring for glob. e.g. *M39*.fits')
     parser.add_argument('--ra', dest = 'ra', default = None, help = "RA of object. e.g. '21 32 12'")
     parser.add_argument('--dec', dest = 'dec', default = None, help = 'DEC of object. e.g. "+48 26 00')    
-    parser.add_argument('--rakeyword', dest = 'rakey', default = 'OBJCTRA', help = "header keyword for RA.  Default is OBJCTRA.")
-    parser.add_argument('--deckeyword', dest = 'deckey', default = 'OBJCTDEC', help = 'header keyword for DEC.  Default is OBJCTDEC')    
+    parser.add_argument('--rakeyword', dest = 'rakeyword', default = 'OBJCTRA', help = "header keyword for RA.  Default is OBJCTRA.")
+    parser.add_argument('--deckeyword', dest = 'deckeyword', default = 'OBJCTDEC', help = 'header keyword for DEC.  Default is OBJCTDEC')    
 
     args = parser.parse_args()
     matchstring = args.filestring+'*.fits'
