@@ -5,10 +5,13 @@ replace RA and DEC with provided values
 
 example usage:
 
-python ~/github/breyo/py/breyo/fixcoords.py --filestring zfbp-M39 --ra '21 31 48' --dec '48 26 00'
+python ~/github/breyo/py/breyo/fixcoords.py --filestring zfbp-M39 --ra '21 31 48' --dec '+48 26 00'
 
 This will update all files zfbp-M39*.fits
 
+NOTE: 
+* you must have a sign in front of dec
+* no decimal places on ra or dec
 '''
 
 import argparse
