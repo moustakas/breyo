@@ -94,6 +94,15 @@ The program will create BREYO_DATA_DIR/reduced, added a new directory to store t
 
 ## Running the reduction pipeline
 
+From BREYO_DATA_DIR, the program is assuming that the raw data is in a subfolder called raw, and the reduced data will go in a subfolder called reduced.
+
+For example the raw data is in raw/2020-11-09 and the reduced data will be in reduced/2020-11-09.
+
+To run the reduction pipeline through astrometric correction:
+
+```
+reduce-breyo 2020-11-08 --preproc --masterbias --masterflats --reduceall -crzap --astrometry 
+```
 
 
 ## Authors
