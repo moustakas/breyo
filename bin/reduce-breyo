@@ -359,7 +359,11 @@ def main():
                 print('Skipping existing file {}'.format(outfile))
             else:
                 hdr = astropy.io.fits.getheader(fname)
-                c = SkyCoord(hdr['OBJCTRA']+hdr['OBJCTDEC'], unit=(u.hourangle, u.deg))
+                try:
+                    c = SkyCoord(hdr['OBJCTRA']+hdr['OBJCTDEC'], unit=(u.hourangle, u.deg))
+                except KeyError:
+                    print('problem with header - no OBJCTRA, OBJCTDEC for ',fname)
+                    continue
                 ra, dec = c.ra.value, c.dec.value
                 axyfile = outfile.replace('.fits', '.axy')
                 #wcsfile = '$(mktemp /tmp/{}.wcs)'.format(os.path.basename(outfile).replace('.fits', ''))
