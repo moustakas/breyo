@@ -448,6 +448,7 @@ def main():
 
     if args.photcalib:
         from scipy.optimize import curve_fit
+        from astropy.io import fits
         ### MAG_REG = ZP + MAG_INSTRUMENT + C0*AIRMASS + C1*COLOR
         # read in refstars catalog for a particular filter
         
