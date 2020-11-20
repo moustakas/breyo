@@ -477,7 +477,7 @@ def main():
                     if os.path.isfile(reffile):
                         #print('Skipping existing file {}'.format(outfile))
                         # read in refstars table
-                        phottab = fits.getdata(outfile)
+                        phottab = fits.getdata(reffile)
 
                         # select the right panstarrs column based on filter
 
