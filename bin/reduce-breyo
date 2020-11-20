@@ -463,9 +463,13 @@ def main():
             print(ic.summary)
         print('allfilt = ',allfilt)
         for filt in allfilt:
-            print(filt)
+
+            
             panfilt = panstarrs_filt[filt]
-            icfilt = ic.filter(filter=filt)
+            try:
+                icfilt = ic.filter(filter=filt)
+            except FileNotFoundError:
+                print('WARNING: no files found in filter ',filt)
             for hdu, fname in icfilt.hdus(return_fname=True):
 
                 imgwcs = wcs.WCS(hdu.header)
