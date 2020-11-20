@@ -126,8 +126,10 @@ def main():
                 # update the header
                 hdr['IMAGETYP'] = imtype
                 if 'FILTER' in hdr:
-                    hdr['FILTER'] = newfilt[hdr['FILTER']]
-
+                    try:
+                        hdr['FILTER'] = newfilt[hdr['FILTER']]
+                    except KeyError: # this is raised for example if color image is in directory
+                        print('WARNING: FILTER {} not recognized.  \n\tMaybe move {} to junk after preproc'.format(hdr['FILTER'],fname))
                 img = CCDData(data=exp.data.astype('f4'), meta=hdr, unit=u.adu)
 
                 # Do not create the uncertainty array here so we're not carrying
@@ -434,6 +436,7 @@ def main():
                 outhdu.writeto(outfile, overwrite=True)
 
     if args.photcalib:
+        ### this routine is not complete yet
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
         ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='azfbp-*.fits')
         if args.verbose:
@@ -448,7 +451,11 @@ def main():
                 airmass, exptime = hdu.header['AIRMASS'], hdu.header['EXPTIME']
                 img = hdu.data / exptime # [electron/s]
 
-                pdb.set_trace()
+                #pdb.set_trace()
+
+                # solve for zeropoint
+
+                # save with prefix 'c'
 
     if args.reproject:
         # https://ccdproc.readthedocs.io/en/latest/image_combination.html#clipping
