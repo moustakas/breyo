@@ -355,7 +355,7 @@ def main():
 
                 cmd =  'solve-field {scifile} --config {configfile} --ra {ra} --dec {dec} '
                 cmd += '--scale-low 0.5 --scale-high 1.0 --scale-units arcsecperpix '
-                cmd += '--radius 0.5 --tweak-order 2 --crpix-center --nsigma 10 --objs 100 '
+                cmd += '--radius 0.75 --tweak-order 2 --crpix-center --nsigma 10 --objs 100 '
                 cmd += '--solved none --index-xyls none --match none '
                 cmd += '--rdls none --corr none --axy {axyfile} ' # --temp-axy
                 cmd += '--new-fits {outfile} --downsample 2 ' # --wcs {wcsfile} '
