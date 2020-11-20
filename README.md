@@ -92,7 +92,10 @@ The program will create BREYO_DATA_DIR/reduced, added a new directory to store t
 /mnt/qnap_home/rfinn/telescope_reduction/reduced/2020-11-09
 ```
 
+
 ## Running the reduction pipeline
+
+
 
 From BREYO_DATA_DIR, the program is assuming that the raw data is in a subfolder called raw, and the reduced data will go in a subfolder called reduced.
 
@@ -114,8 +117,30 @@ cd reduced/2020-11-08
 mkdir junk
 mv p-M32*.fits junk/.
 mv p-danae*{1..3}r.fits junk/.
+mv *RGB* junk/.
 ```
 You can also fix any filenames that were entered incorrectly while observing.  Again, this should be done at the telescope.
+
+### Check image coordinates
+
+At least once, the coordinates were not updated correctly in the image headers.
+```
+gethead OBJCTRA OBJCTDEC p*.fits
+
+```
+If there is a problem, run py/fixcoords.py
+
+### Proceed with pipeline reduction
+
+move back to BREYO_DATA_DIR
+```
+cd ../../
+```
+Then proceed with pipeline
+```
+reduce-breyo 2020-11-08 --masterbias --masterflats --reduceall --crzap --astrometry --refstars
+
+```
 
 ## Authors
 
