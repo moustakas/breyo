@@ -466,31 +466,44 @@ def main():
                 imgwcs = wcs.WCS(hdu.header)
                 airmass, exptime = hdu.header['AIRMASS'], hdu.header['EXPTIME']
                 img = hdu.data / exptime # [electron/s]
-                
-                outfile = os.path.join(reduxdir, 'refstars-{}-{}'.format(hdu.header['FILTER'], fname))
-                if os.path.isfile(outfile):
-                    #print('Skipping existing file {}'.format(outfile))
-                    # read in refstars table
-                    phottab = fits.getdata(outfile)
+                outfile = os.path.join(reduxdir, 'c{}'.format(fname))                
 
-                    # select the right panstarrs column based on filter
-
-                    pcolname = panfilt+'MeanPSFMag'
-                    # solve for zeropoint
-                    coeff = curve_fit(phot_zp,phottab['mag'],phottab[pcolname])
-
-                    # print zp
-                    print('{} ZP: {:.2f}'.format(filt,coeff[0][0]))
-                    
-                    # scale to common zp
-                    
-                    # add zp to header
-                    
-                    # save with prefix 'c'
-
+                if os.path.isfile(outfile) and not args.overwrite:
+                    print('Skipping existing file {}'.format(outfile))
                 else:
-                    print('WARNING: no refstar file found for {}'.format(fname))
-                    # For some reason, ccdproc doesn't read the full astrometry.net header.
+
+                
+                    reffile = os.path.join(reduxdir, 'refstars-{}-{}'.format(hdu.header['FILTER'], fname))
+                    if os.path.isfile(reffile):
+                        #print('Skipping existing file {}'.format(outfile))
+                        # read in refstars table
+                        phottab = fits.getdata(outfile)
+
+                        # select the right panstarrs column based on filter
+
+                        pcolname = panfilt+'MeanPSFMag'
+                        # solve for zeropoint
+                        coeff = curve_fit(phot_zp,phottab['mag'],phottab[pcolname])
+
+                        # print zp
+                        print('{} ZP: {:.2f}'.format(filt,coeff[0][0]))
+                    
+                        # scale to common zp
+                        # use ZP=17 for now
+
+                        scaled_data = hdu.data*10**((coeff[0][0]-17)/2.5)
+                        # add zp to header
+                        hdu.header.set('PHOTZP','17')
+                        # save with prefix 'c'
+                        #
+                        if args.verbose:
+                            print('saving ',outfile)
+                        fits.writeto(outfile,hdu.data,header=hdu.header,overwrite=True)
+                        
+                        
+                    else:
+                        print('WARNING: no refstar file found for {}'.format(fname))
+                        # For some reason, ccdproc doesn't read the full astrometry.net header.
 
                 
 
