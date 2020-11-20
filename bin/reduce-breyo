@@ -41,6 +41,14 @@ newfilt = {'Blue': 'B',
            'Halpha': 'Halpha',
            }
 
+panstarrs_filt = {'B': 'g',
+           'V': 'g',
+           'R': 'r',
+           'OIII': 'g',
+           'O3': 'g',
+           'Ha': 'r',
+           }
+
 allfilt = ('B', 'V', 'R')
 
 # From Table 6 of https://arxiv.org/pdf/1012.4804.pdf
@@ -52,6 +60,9 @@ kext = {'B': 0.4, 'V': 0.2, 'R': 0.1}
 
 def _inv_median(a):
     return 1 / np.median(a)
+
+def phot_zp(mag,zp): # not solving for airmass or color terms yet
+    return mag + zp
                 
 def main():
     """
@@ -436,6 +447,10 @@ def main():
                 outhdu.writeto(outfile, overwrite=True)
 
     if args.photcalib:
+        from scipy.optimize import curve_fit
+        ### MAG_REG = ZP + MAG_INSTRUMENT + C0*AIRMASS + C1*COLOR
+        # read in refstars catalog for a particular filter
+        
         ### this routine is not complete yet
         keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
         ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='azfbp-*.fits')
@@ -443,19 +458,40 @@ def main():
             print(ic.summary)
 
         for filt in allfilt:
-
+            panfilt = panstarrs_filt[filt]
             icfilt = ic.filter(filter=filt)
             for hdu, fname in icfilt.hdus(return_fname=True):
 
                 imgwcs = wcs.WCS(hdu.header)
                 airmass, exptime = hdu.header['AIRMASS'], hdu.header['EXPTIME']
                 img = hdu.data / exptime # [electron/s]
+                
+                outfile = os.path.join(reduxdir, 'refstars-{}-{}'.format(hdu.header['FILTER'], fname))
+                if os.path.isfile(outfile):
+                    print('Skipping existing file {}'.format(outfile))
+                    # read in refstars table
+                    phottab = fits.getdata(outfile)
 
-                #pdb.set_trace()
+                    # select the right panstarrs column based on filter
 
-                # solve for zeropoint
+                    pcolname = panfilt+'MeanPSFMag'
+                    # solve for zeropoint
+                    coeff = curve_fit(phot_zp,phottab['mag'],phottab[pcolname])
 
-                # save with prefix 'c'
+                    # print zp
+                    print(coeff)
+                    
+                    # scale to common zp
+                    
+                    # add zp to header
+                    
+                    # save with prefix 'c'
+
+                else:
+                    print('WARNING: no refstar file found for {}'.format(fname))
+                    # For some reason, ccdproc doesn't read the full astrometry.net header.
+
+                
 
     if args.reproject:
         # https://ccdproc.readthedocs.io/en/latest/image_combination.html#clipping
