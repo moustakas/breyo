@@ -461,7 +461,7 @@ def main():
         ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='azfbp-*.fits')
         if args.verbose:
             print(ic.summary)
-
+        print('allfilt = ',allfilt)
         for filt in allfilt:
             panfilt = panstarrs_filt[filt]
             icfilt = ic.filter(filter=filt)
