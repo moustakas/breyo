@@ -101,9 +101,21 @@ For example the raw data is in raw/2020-11-09 and the reduced data will be in re
 To run the reduction pipeline through astrometric correction:
 
 ```
-reduce-breyo 2020-11-08 --preproc --masterbias --masterflats --reduceall -crzap --astrometry 
+reduce-breyo 2020-11-08 --preproc 
 ```
 
+### If directory contains files that shouldn't be processed...
+
+Move to reduced data, and move all bad files into a junk directory.  These files should be highlighted red in the observing log. (Eventually, we will do this while observing, so this step will become unnecessary.)
+
+
+```
+cd reduced/2020-11-08
+mkdir junk
+mv p-M32*.fits junk/.
+mv p-danae*{1..3}r.fits junk/.
+```
+You can also fix any filenames that were entered incorrectly while observing.  Again, this should be done at the telescope.
 
 ## Authors
 
