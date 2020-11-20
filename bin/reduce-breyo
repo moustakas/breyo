@@ -508,7 +508,7 @@ def main():
                         #
                         if args.verbose:
                             print('saving ',outfile)
-                        fits.writeto(outfile,hdu.data,header=hdu.header,overwrite=True)
+                        hdu.writeto(outfile,hdu.data,header=hdu.header,overwrite=True)
                         
                         
                     else:
@@ -550,6 +550,9 @@ def main():
             print('Working on {}, mean RA, Dec = {:.5f}, {:.5f}'.format(obj, crval[0], crval[1]))
 
             for ccd, fname in icobj.ccds(return_fname=True):
+                if len(fname) < 1:
+                    print('Warning: length of filename < 1.  Skipping file ',fname)
+                    continue
                 outfile = os.path.join(reduxdir, 'u{}'.format(fname))
                 if os.path.isfile(outfile) and not args.overwrite:
                         print('Skipping existing file {}'.format(outfile))
