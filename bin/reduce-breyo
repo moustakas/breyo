@@ -508,7 +508,7 @@ def main():
                         #
                         if args.verbose:
                             print('saving ',outfile)
-                        hdu.writeto(outfile,hdu.data,header=hdu.header,overwrite=True)
+                        hdu.writeto(outfile,hdu.data,hdu.header,overwrite=True)
                         
                         
                     else:
