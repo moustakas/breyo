@@ -469,7 +469,7 @@ def main():
                 
                 outfile = os.path.join(reduxdir, 'refstars-{}-{}'.format(hdu.header['FILTER'], fname))
                 if os.path.isfile(outfile):
-                    print('Skipping existing file {}'.format(outfile))
+                    #print('Skipping existing file {}'.format(outfile))
                     # read in refstars table
                     phottab = fits.getdata(outfile)
 
