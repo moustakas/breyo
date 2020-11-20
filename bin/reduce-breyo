@@ -480,7 +480,7 @@ def main():
                     coeff = curve_fit(phot_zp,phottab['mag'],phottab[pcolname])
 
                     # print zp
-                    print(coeff)
+                    print(filt,coeff[0][0])
                     
                     # scale to common zp
                     
