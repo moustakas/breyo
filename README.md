@@ -87,7 +87,17 @@ The program will assume that the raw data is in BREYO_DATA_DIR/raw, and that eac
 /mnt/qnap_home/rfinn/telescope_reduction/raw/2020-11-09
 ```
 
-The program will create BREYO_DATA_DIR/reduced, added a new directory to store the reduced data.  For example:
+When running on a virtual machine, the data are stored in /mnt/telescope/RawData/, so I did the following:
+
+```
+cd /mnt/qnap_home/rfinn/telescope-reduction
+mkdir raw
+cd raw
+ln -s /mnt/telescope/RawData/20??-??-?? .
+
+```
+
+The program will create BREYO_DATA_DIR/reduced, which is a new directory to store the reduced data.  For example:
 ```
 /mnt/qnap_home/rfinn/telescope_reduction/reduced/2020-11-09
 ```
