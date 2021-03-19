@@ -96,6 +96,15 @@ cd raw
 ln -s /mnt/telescope/RawData/20??-??-?? .
 
 ```
+You will need to rerun this to link new nights of data.
+
+[not sure why I can't just do, from the BREYO_DATA_DIR/
+
+```
+ln -s /mnt/telescope/RawData raw
+```
+I think the paths get confused somehow - will check again at a later date.]
+
 
 The program will create BREYO_DATA_DIR/reduced, which is a new directory to store the reduced data.  For example:
 ```
