@@ -138,6 +138,12 @@ mv p-M32*.fits junk/.
 mv p-danae*{1..3}r.fits junk/.
 mv *RGB* junk/.
 ```
+
+You might also need to remove some of the sky flats if the counts were too high/low.
+```
+cd calib
+mkdir junk
+```
 You can also fix any filenames that were entered incorrectly while observing.  Again, this should be done at the telescope.
 
 ### Check image coordinates
