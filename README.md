@@ -138,6 +138,12 @@ mv p-M32*.fits junk/.
 mv p-danae*{1..3}r.fits junk/.
 mv *RGB* junk/.
 ```
+
+You might also need to remove some of the sky flats if the counts were too high/low.
+```
+cd calib
+mkdir junk
+```
 You can also fix any filenames that were entered incorrectly while observing.  Again, this should be done at the telescope.
 
 ### Check image coordinates
@@ -145,9 +151,21 @@ You can also fix any filenames that were entered incorrectly while observing.  A
 At least once, the coordinates were not updated correctly in the image headers.
 ```
 gethead OBJCTRA OBJCTDEC p*.fits
+```
+If there is a problem, run py/fixcoords.py. This can happen if you forget to connect MaxIm DL to the telescope, in which case MaxIm DL will not have any of the TCS information.
 
 ```
-If there is a problem, run py/fixcoords.py
+python ~/github/breyo/py/breyo/fixcoords.py --ra "20 20 53.24" --dec "+59 26 55.6"  --filestring p-TrES
+```
+
+### Other Gotchas
+
+The bias frames should be named 'bias*.fits'.  If they are not, you need to rename them before running the pipeline.  For example:
+
+```
+rename 's/Bias/bias/' Bias*.fits
+
+```
 
 ### Proceed with pipeline reduction
 
