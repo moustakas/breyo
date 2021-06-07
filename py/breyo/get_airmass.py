@@ -59,8 +59,8 @@ if __name__ == '__main__':
             target_altaz = target_coord.transform_to(frame_tobs)
 
             
-            
-            header.set('AIRMASS',target_altaz.secz)
+            secz = "{:.2f}".format(target_altaz.secz)
+            header.set('AIRMASS',secz)
             fits.writeto(f,data,header,overwrite=True)
             
     else:
