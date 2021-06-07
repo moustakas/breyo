@@ -151,13 +151,11 @@ You can also fix any filenames that were entered incorrectly while observing.  A
 At least once, the coordinates were not updated correctly in the image headers.
 ```
 gethead OBJCTRA OBJCTDEC p*.fits
-
 ```
 If there is a problem, run py/fixcoords.py. This can happen if you forget to connect MaxIm DL to the telescope, in which case MaxIm DL will not have any of the TCS information.
 
 ```
-python ~/github/breyo/py/breyo/fixcoords.py --ra "20 20 53.24" --dec "+59 26 55.6"  --filestring -pTrES
-
+python ~/github/breyo/py/breyo/fixcoords.py --ra "20 20 53.24" --dec "+59 26 55.6"  --filestring p-TrES
 ```
 
 
