@@ -158,6 +158,14 @@ If there is a problem, run py/fixcoords.py. This can happen if you forget to con
 python ~/github/breyo/py/breyo/fixcoords.py --ra "20 20 53.24" --dec "+59 26 55.6"  --filestring p-TrES
 ```
 
+### Other Gotchas
+
+The bias frames should be named 'bias*.fits'.  If they are not, you need to rename them before running the pipeline.  For example:
+
+```
+rename 's/Bias/bias/' Bias*.fits
+
+```
 
 ### Proceed with pipeline reduction
 
