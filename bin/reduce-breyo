@@ -325,7 +325,7 @@ def main():
                 #for fname in fnames:
                 masterdarkfile = os.path.join(reduxdir, 'master-dark-{:.1f}s.fits'.format(expt))                
                 print('Reading {}'.format(masterdarkfile))
-                masterflat = CCDData.read(masterdarkfile)
+                masterdark = CCDData.read(masterdarkfile)
 
                 
                 for ccd, fname in icfilt.ccds(return_fname=True):
@@ -341,7 +341,7 @@ def main():
                                               #gain=config['ccd']['gain'],
                                               #readnoise=config['ccd']['readnoise'],
                                               #master_bias=masterbias,
-                                              dark_frame=masterdarkfile,
+                                              dark_frame=masterdark,
                                               master_flat=masterflat,
                                               add_keyword={
                                                   'CREATVAR': True,
