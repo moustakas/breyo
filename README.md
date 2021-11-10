@@ -186,6 +186,22 @@ reduce-breyo 2020-11-08 --kepler --masterdarks --masterflats --reduceall --crzap
 
 ```
 
+If combining data from more than one night, run 
+
+```
+```
+reduce-breyo 2021-11-03 --preproc 
+reduce-breyo 2021-11-04 --preproc
+```
+
+Then merge the files from the two nights (make sure names are not the same)
+```
+cd reduced/
+cd 2021-11-03
+cp ../2021-11-04/calib/dark*.fits calib/.
+```
+
+
 If reducing data from the SBIG STL-11000M CCD: 
 ```
 reduce-breyo 2020-11-08 --masterbias --masterflats --reduceall --crzap --astrometry --refstars
