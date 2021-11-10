@@ -180,6 +180,12 @@ reduce-breyo 2020-11-08 --kepler --masterdarks --masterflats --reduceall --crzap
 
 ```
 
+If reducing data from the Kepler K4040 CMOS detector AND feeling lucky, try:
+```
+reduce-breyo 2020-11-08 --kepler --masterdarks --masterflats --reduceall --crzap --astrometry --refstars --photcalib --reproject
+
+```
+
 If reducing data from the SBIG STL-11000M CCD: 
 ```
 reduce-breyo 2020-11-08 --masterbias --masterflats --reduceall --crzap --astrometry --refstars
