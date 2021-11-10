@@ -210,9 +210,12 @@ def main():
             masterbias.write(masterbiasfile, overwrite=True)
 
     if args.masterdarks:
-        print('Reading {}'.format(masterbiasfile))
-        masterbias = CCDData.read(masterbiasfile)
-
+        if not args.kepler:
+            print('Reading {}'.format(masterbiasfile))
+            masterbias = CCDData.read(masterbiasfile)
+        else:
+            print('Not using bias for Kepler data')
+            
         keys = ['file', 'imagetyp', 'exptime', 'filter']
         ic = ccdp.ImageFileCollection(calibdir, keywords=keys, glob_include='dark*.fits')
         if args.verbose:
@@ -231,7 +234,8 @@ def main():
                 rdarks = []
                 for darkfile in darkfiles:
                     dark = CCDData.read(darkfile)
-                    dark = ccdp.subtract_bias(dark, masterbias, add_keyword={'SUBBIAS': True})
+                    if not args.kepler:
+                        dark = ccdp.subtract_bias(dark, masterbias, add_keyword={'SUBBIAS': True})
                     rdarks.append( dark )
                     
                 masterdark = ccdp.combine(rdarks,
@@ -297,50 +301,40 @@ def main():
             print('Reading {}'.format(masterflatfile))
             masterflat = CCDData.read(masterflatfile)
             
-            icfilt = ic.filter(filter=filt)
-            #fnames = ic.files_filtered(filter=filt)#, include_path=True)
-            #for fname in fnames:
-            for ccd, fname in icfilt.ccds(return_fname=True):
-                outfile = os.path.join(reduxdir, 'fd{}'.format(fname))
-                if os.path.isfile(outfile) and not args.overwrite:
-                    print('Skipping existing file {}'.format(outfile))
-                else:
-                    # deal with uncertainties later
-                    #img = CCDData.read(os.path.join(reduxdir, fname))
-                    #img.data = img.divide(config['ccd']['gain'])
-                    #img = ccdp.create_deviation(img, gain=config['ccd']['gain'],
-                    #                            readnoise=config['ccd']['readnoise'],
-                    #                            disregard_nan=True, add_keyword={'CREATVAR': True})
-                    #img.data = img.data.multiply(config['ccd']['gain'])
+            for expt in set(ic.summary['exptime']):
+            
+                icfilt = ic.filter(filter=filt,exptime=expt)
+                #fnames = ic.files_filtered(filter=filt)#, include_path=True)
+                #for fname in fnames:
+                masterdarkfile = os.path.join(reduxdir, 'master-dark-{:.1f}s.fits'.format(expt))                
+                print('Reading {}'.format(masterdarkfile))
+                masterflat = CCDData.read(masterdarkfile)
 
-                    #img = ccdp.subtract_bias(img, masterbias,
-                    #                         add_keyword={
-                    #                             'SUBBIAS': True,
-                    #                             'BIASFILE': os.path.basename(masterbiasfile),
-                    #                             })
-                    #img = ccdp.flat_correct(img, masterflat, 
-                    #                        add_keyword={
-                    #                            'FLATCOR': True,
-                    #                            'FLATFILE': os.path.basename(masterflatfile),
-                    #                            })
+                
+                for ccd, fname in icfilt.ccds(return_fname=True):
+                    outfile = os.path.join(reduxdir, 'fd{}'.format(fname))
+                    if os.path.isfile(outfile) and not args.overwrite:
+                        print('Skipping existing file {}'.format(outfile))
+                    else:
                                         
-                    outccd = ccdp.ccd_process(ccd,
+                        outccd = ccdp.ccd_process(ccd,
                                               gain_corrected=True,
                                               #error=True,
                                               min_value=0.9,
                                               #gain=config['ccd']['gain'],
                                               #readnoise=config['ccd']['readnoise'],
-                                              master_bias=masterbias,
+                                              #master_bias=masterbias,
+                                              dark_frame=masterdarkfile,
                                               master_flat=masterflat,
                                               add_keyword={
                                                   'CREATVAR': True,
                                                   'SUBBIAS': True,
                                                   'FLATCOR': True,
-                                                  'BIASFILE': os.path.basename(masterbiasfile),
+                                                  'DARKFILE': os.path.basename(masterdarkfile),
                                                   'FLATFILE': os.path.basename(masterflatfile),
                                                   })
-                    print('  Writing {}'.format(outfile))
-                    outccd.write(outfile, overwrite=True)
+                        print('  Writing {}'.format(outfile))
+                        outccd.write(outfile, overwrite=True)
 
     elif args.reduceall:
         print('Reading {}'.format(masterbiasfile))
