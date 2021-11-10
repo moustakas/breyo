@@ -282,6 +282,8 @@ def main():
                         # get exptime from header of flat image
                         fheader = astropy.io.fits.getheader(flatfile)
                         fexposure_time = fheader['EXPTIME']
+                        # UPDATE TO USE DARK WITH CLOSEST EXPOSURE TIME IF THE EXACT TIME IS NOT AVAILABLE
+                        # NOTE:  this is not recommended procedure for CMOS!
                         masterdarkfile = os.path.join(reduxdir, 'master-dark-{:.1f}s.fits'.format(fexposure_time))
                         if os.path.exists(masterdarkfile):
                             masterdark = CCDData.read(masterdarkfile)                            
@@ -322,9 +324,13 @@ def main():
             for expt in set(ic.summary['exptime']):
             
                 icfilt = ic.filter(filter=filt,exptime=expt)
+                if len(icfilt) == 0:
+                    continue
                 #fnames = ic.files_filtered(filter=filt)#, include_path=True)
                 #for fname in fnames:
-                masterdarkfile = os.path.join(reduxdir, 'master-dark-{:.1f}s.fits'.format(expt))                
+                masterdarkfile = os.path.join(reduxdir, 'master-dark-{:.1f}s.fits'.format(expt))
+                # update to find the dark with closest exposure time if the exact one is not present
+                # NOTE: this is NOT a recommended procedure for CMOS
                 print('Reading {}'.format(masterdarkfile))
                 masterdark = CCDData.read(masterdarkfile)
 
