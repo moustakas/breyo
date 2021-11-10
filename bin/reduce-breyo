@@ -335,20 +335,22 @@ def main():
                     else:
                                         
                         outccd = ccdp.ccd_process(ccd,
-                                              gain_corrected=True,
-                                              #error=True,
-                                              min_value=0.9,
-                                              #gain=config['ccd']['gain'],
-                                              #readnoise=config['ccd']['readnoise'],
-                                              #master_bias=masterbias,
-                                              dark_frame=masterdark,
-                                              master_flat=masterflat,
-                                              add_keyword={
-                                                  'CREATVAR': True,
-                                                  'SUBBIAS': True,
-                                                  'FLATCOR': True,
-                                                  'DARKFILE': os.path.basename(masterdarkfile),
-                                                  'FLATFILE': os.path.basename(masterflatfile),
+                                                  gain_corrected=True,
+                                                  #error=True,
+                                                  min_value=0.9,
+                                                  #gain=config['ccd']['gain'],
+                                                  #readnoise=config['ccd']['readnoise'],
+                                                  #master_bias=masterbias,
+                                                  exposure_key='EXPTIME',
+                                                  exposure_unit=u.s,
+                                                  dark_frame=masterdark,
+                                                  master_flat=masterflat,
+                                                  add_keyword={
+                                                      'CREATVAR': True,
+                                                      'SUBBIAS': True,
+                                                      'FLATCOR': True,
+                                                      'DARKFILE': os.path.basename(masterdarkfile),
+                                                      'FLATFILE': os.path.basename(masterflatfile),
                                                   })
                         print('  Writing {}'.format(outfile))
                         outccd.write(outfile, overwrite=True)
