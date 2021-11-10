@@ -322,7 +322,7 @@ def main():
             masterflat = CCDData.read(masterflatfile)
             
             for expt in set(ic.summary['exptime']):
-            
+                print('filter, exptime = ',filt,expt)
                 icfilt = ic.filter(filter=filt,exptime=expt)
                 print('icfilt = ',icfilt)
                 if icfilt == '':
