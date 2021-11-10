@@ -289,7 +289,7 @@ def main():
                             masterdark = CCDData.read(masterdarkfile)                            
                             flat = ccdp.subtract_dark(flat, masterdark, add_keyword={'SUBDARK': True},dark_exposure=fexposure_time*u.s,data_exposure=fexposure_time*u.s)
                         else:
-                            print('WARNING: did not find a dark with exposure time = {}s to match {}'.format(fexposure_time,os.path.basename(flatfile))
+                            print('WARNING: did not find a dark with exposure time = {}s to match {}'.format(fexposure_time,os.path.basename(flatfile)))
                         # look for the matching dark
                     rflats.append(flat)
                     
