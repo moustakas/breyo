@@ -53,6 +53,7 @@ panstarrs_filt = {'B': 'g',
            'OIII': 'g',
            'O3': 'g',
            'Ha': 'r',
+           'Halpha': 'r',                  
            'r': 'r',
            'g': 'g',
            'i': 'i'            
@@ -610,14 +611,9 @@ def main():
                         # scale to common zp
                         # use ZP=17 for now
 
-                        if args.kepler:
-                            scaled_data = hdu.data*10**((coeff[0][0]-18)/2.5)
-                            # add zp to header
-                            hdu.header.set('PHOTZP','18')
-                        else:
-                            scaled_data = hdu.data*10**((coeff[0][0]-17)/2.5)
-                            # add zp to header
-                            hdu.header.set('PHOTZP','17')
+                        scaled_data = hdu.data*10**((coeff[0][0]-17)/2.5)
+                        # add zp to header
+                        hdu.header.set('PHOTZP','17')
                             
 
                         # save with prefix 'c'
