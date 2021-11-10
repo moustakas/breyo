@@ -37,8 +37,14 @@ newfilt = {'Blue': 'B',
            'Red': 'R',
            'OIII': 'OIII',
            'O3': 'OIII',
+           'oIII': 'OIII',           
            'Ha': 'Halpha',
            'Halpha': 'Halpha',
+           'H alpha': 'Halpha',
+           'H alpha': 'Halpha',
+           'g': 'g',
+           'r': 'r',
+           'i': 'i',            
            }
 
 panstarrs_filt = {'B': 'g',
@@ -47,6 +53,9 @@ panstarrs_filt = {'B': 'g',
            'OIII': 'g',
            'O3': 'g',
            'Ha': 'r',
+           'r': 'r',
+           'g': 'g',
+           'i': 'i'            
            }
 
 allfilt = ('B', 'V', 'R')
@@ -123,6 +132,12 @@ def main():
             #    print('Cannot yet handle unbinned imaging.')
             #    continue
 
+            # if filename contains skyflat and imtype=='object', reset imtype to 'flat'
+            if ('skyflat' in fname) & (imtype == 'object'):
+                imtype = 'flat'
+                
+                
+            
             # push these cases to a function
             if imtype == 'bias' or imtype == 'dark' or imtype == 'flat':
                 outfile = os.path.join(calibdir, fname.replace('.fit', '.fits'))
@@ -156,7 +171,9 @@ def main():
                                         add_keyword={'GAINCOR': True})
 
                 # ToDo: generalize the trimming!
-                img = ccdp.trim_image(img[:, 50:], add_keyword={'TRIM': True})
+                # why are we trimming?  no overscan
+                if not args.kepler:
+                    img = ccdp.trim_image(img[:, 50:], add_keyword={'TRIM': True})
 
                 print('Writing {}'.format(outfile))
                 img.write(outfile, overwrite=True)
