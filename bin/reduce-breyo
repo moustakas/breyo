@@ -253,8 +253,12 @@ def main():
                 masterdark.write(masterdarkfile, overwrite=True)
 
     if args.masterflats:
-        print('Reading {}'.format(masterbiasfile))
-        masterbias = CCDData.read(masterbiasfile)
+        if not args.kepler:
+            print('Reading {}'.format(masterbiasfile))
+            masterbias = CCDData.read(masterbiasfile)
+        else:
+            print('Not subtracting bias from flats for Kepler data')
+            print()
 
         keys = ['file', 'imagetyp', 'exptime', 'filter']
         ic = ccdp.ImageFileCollection(calibdir, keywords=keys, glob_include='skyflat*.fits')
@@ -270,7 +274,20 @@ def main():
                 rflats = []
                 for flatfile in flatfiles:
                     flat = CCDData.read(flatfile)
-                    flat = ccdp.subtract_bias(flat, masterbias, add_keyword={'SUBBIAS': True})
+                    if not args.kepler:
+                        flat = ccdp.subtract_bias(flat, masterbias, add_keyword={'SUBBIAS': True})
+                    else:
+                        # subtract the correct dark from the flat
+                        # get exptime from header of flat image
+                        fheader = fits.getheader(flatfile)
+                        fexposure_time = fheader['EXPTIME']
+                        masterdarkfile = os.path.join(reduxdir, 'master-dark-{:.1f}s.fits'.format(fexposure_time))
+                        if os.path.exists(masterdarkfile):
+                            masterdark = CCDData.read(masterdarkfile)                            
+                            flat = ccdp.subtract_dark(flat, masterdark, add_keyword={'SUBDARK': True})
+                        else:
+                            print('WARNING: did not find a dark with exposure time = {}s to match {}'.format(fexposure_time,flatfile))
+                        # look for the matching dark
                     rflats.append(flat)
                     
                 masterflat = ccdp.combine(rflats,
