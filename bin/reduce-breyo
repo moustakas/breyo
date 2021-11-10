@@ -58,7 +58,7 @@ panstarrs_filt = {'B': 'g',
            'i': 'i'            
            }
 
-allfilt = ('B', 'V', 'R')
+allfilt = ('g','r','i','Halpha','B', 'V', 'R')
 
 # From Table 6 of https://arxiv.org/pdf/1012.4804.pdf
 # assume Landoldt and PanSTARRS filters and RV=3.1
@@ -610,9 +610,16 @@ def main():
                         # scale to common zp
                         # use ZP=17 for now
 
-                        scaled_data = hdu.data*10**((coeff[0][0]-17)/2.5)
-                        # add zp to header
-                        hdu.header.set('PHOTZP','17')
+                        if args.kepler:
+                            scaled_data = hdu.data*10**((coeff[0][0]-18)/2.5)
+                            # add zp to header
+                            hdu.header.set('PHOTZP','18')
+                        else:
+                            scaled_data = hdu.data*10**((coeff[0][0]-17)/2.5)
+                            # add zp to header
+                            hdu.header.set('PHOTZP','17')
+                            
+
                         # save with prefix 'c'
                         #
                         if args.verbose:
