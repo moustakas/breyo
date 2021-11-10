@@ -324,7 +324,7 @@ def main():
             for expt in set(ic.summary['exptime']):
             
                 icfilt = ic.filter(filter=filt,exptime=expt)
-                if len(icfilt) == 0:
+                if icfilt == '':
                     continue
                 #fnames = ic.files_filtered(filter=filt)#, include_path=True)
                 #for fname in fnames:
