@@ -169,11 +169,18 @@ rename 's/Bias/bias/' Bias*.fits
 
 ### Proceed with pipeline reduction
 
-move back to BREYO_DATA_DIR
+move back to BREYO_DATA_DIR and proceed with pipeline.
 ```
 cd ../../
 ```
-Then proceed with pipeline
+
+If reducing data from the Kepler K4040 CMOS detector:
+```
+reduce-breyo 2020-11-08 --kepler --masterdarks --masterflats --reduceall --crzap --astrometry --refstars
+
+```
+
+If reducing data from the SBIG STL-11000M CCD: 
 ```
 reduce-breyo 2020-11-08 --masterbias --masterflats --reduceall --crzap --astrometry --refstars
 
