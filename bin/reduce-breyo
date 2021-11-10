@@ -279,7 +279,7 @@ def main():
                     else:
                         # subtract the correct dark from the flat
                         # get exptime from header of flat image
-                        fheader = fits.getheader(flatfile)
+                        fheader = astropy.io.fits.getheader(flatfile)
                         fexposure_time = fheader['EXPTIME']
                         masterdarkfile = os.path.join(reduxdir, 'master-dark-{:.1f}s.fits'.format(fexposure_time))
                         if os.path.exists(masterdarkfile):
