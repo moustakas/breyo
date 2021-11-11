@@ -188,7 +188,7 @@ reduce-breyo 2020-11-08 --kepler --masterdarks --masterflats --reduceall --crzap
 
 ### If combining data from more than one night... 
 
-```
+
 ```
 reduce-breyo 2021-11-03 --preproc 
 reduce-breyo 2021-11-04 --preproc
@@ -216,7 +216,7 @@ reduce-breyo 2020-11-08 --masterbias --masterflats --reduceall --crzap --astrome
 
 ## Acknowledgments
 
-Thanks to the **stellar** students who helped write and debug this code including:
+Thanks to the *stellar* students who helped write and debug this code including:
 * Sandy Spicer
 * Ryan Cirrincione
 * Daniel Allspach
