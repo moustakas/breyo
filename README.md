@@ -167,7 +167,7 @@ rename 's/Bias/bias/' Bias*.fits
 
 ```
 
-### Proceed with pipeline reduction
+### Proceed with pipeline reduction with Kepler Data
 
 move back to BREYO_DATA_DIR and proceed with pipeline.
 ```
@@ -186,7 +186,7 @@ reduce-breyo 2020-11-08 --kepler --masterdarks --masterflats --reduceall --crzap
 
 ```
 
-If combining data from more than one night, run 
+### If combining data from more than one night... 
 
 ```
 ```
@@ -202,7 +202,8 @@ cp ../2021-11-04/calib/dark*.fits calib/.
 ```
 
 
-If reducing data from the SBIG STL-11000M CCD: 
+### If reducing data from the SBIG STL-11000M CCD
+
 ```
 reduce-breyo 2020-11-08 --masterbias --masterflats --reduceall --crzap --astrometry --refstars
 
@@ -215,3 +216,7 @@ reduce-breyo 2020-11-08 --masterbias --masterflats --reduceall --crzap --astrome
 
 ## Acknowledgments
 
+Thanks to the **stellar** students who helped write and debug this code including:
+* Sandy Spicer
+* Ryan Cirrincione
+* Daniel Allspach
