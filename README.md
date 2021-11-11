@@ -158,6 +158,16 @@ If there is a problem, run py/fixcoords.py. This can happen if you forget to con
 python ~/github/breyo/py/breyo/fixcoords.py --ra "20 20 53.24" --dec "+59 26 55.6"  --filestring p-TrES
 ```
 
+### Check for airmass
+If the coordinates were not added to the image headers correctly, then airmass will also likely be missing.
+```
+gethead AIRMASS p*.fits
+```
+To fix this:
+
+```
+sethead AIRMASS=1 p*.fits
+```
 ### Other Gotchas
 
 The bias frames should be named 'bias*.fits'.  If they are not, you need to rename them before running the pipeline.  For example:
