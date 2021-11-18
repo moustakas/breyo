@@ -59,7 +59,7 @@ panstarrs_filt = {'B': 'g',
            'i': 'i'            
            }
 
-allfilt = ('g','r','i','Halpha','B', 'V', 'R')
+allfilt = ('g','r','i','Halpha','OIII','B', 'V', 'R')
 
 # From Table 6 of https://arxiv.org/pdf/1012.4804.pdf
 # assume Landoldt and PanSTARRS filters and RV=3.1
@@ -563,7 +563,7 @@ def main():
                     print('Found {}/{} stars within {}'.format(nstar, len(srcs), matchrad))
 
                 out = astropy.table.hstack((refsrcs[indx_ref], srcs[indx]))
-                out.meta['description'] = 'PANSTARRS DR1 from Vizier'
+                out.meta['description'] = 'PANSTARRS DR1'
                 out.add_column(astropy.table.Column(name='airmass', dtype='f4',
                                                     data=np.repeat(hdu.header['AIRMASS'], nstar)))
                 out.add_column(astropy.table.Column(name='exptime', dtype='f4',
