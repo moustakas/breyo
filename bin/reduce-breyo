@@ -587,7 +587,10 @@ def main():
                     outhdu.header[key] = (hdu.header[key], hdu.header.comments[key])
 
                 print('Writing {} reference stars to {}'.format(len(out), outfile))
-                outhdu.writeto(outfile, overwrite=True)
+                try:
+                    outhdu.writeto(outfile, overwrite=True)
+                except:
+                    return outhdu
 
     if args.photcalib:
         from scipy.optimize import curve_fit
@@ -766,4 +769,4 @@ def main():
                         print('  Failed to reproject {}'.format(fname))
 
 if __name__ == '__main__':
-    main()
+    t = main()
