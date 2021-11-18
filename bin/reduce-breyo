@@ -563,6 +563,7 @@ def main():
                     print('Found {}/{} stars within {}'.format(nstar, len(srcs), matchrad))
 
                 out = astropy.table.hstack((refsrcs[indx_ref], srcs[indx]))
+                out.meta['description'] = 'PANSTARRS DR1 from Vizier'
                 out.add_column(astropy.table.Column(name='airmass', dtype='f4',
                                                     data=np.repeat(hdu.header['AIRMASS'], nstar)))
                 out.add_column(astropy.table.Column(name='exptime', dtype='f4',
@@ -587,6 +588,7 @@ def main():
                 #    outhdu.header[key] = (hdu.header[key], hdu.header.comments[key])
 
                 print('Writing {} reference stars to {}'.format(len(out), outfile))
+
                 outhdu.writeto(outfile, overwrite=True)
 
     if args.photcalib:
