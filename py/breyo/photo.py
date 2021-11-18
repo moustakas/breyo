@@ -103,10 +103,7 @@ def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False, maxsources=10000):
                                         "zmag":"<18","zmag":"> 8"},   
                         row_limit=maxsources)
 
-    field = SkyCoord(ra=ra_deg, dec=dec_deg,
-                           unit=(u.deg, u.deg),
-                           frame='icrs')
-    cat = vquery.query_region(field, width=radius*u.deg, catalog="II/349/ps1")[0]
+    cat = vquery.query_region(coords, width=radius*u.deg, catalog="II/349/ps1")[0]
 
     # to make this compatible with original version that pulled catalog from MAST
     for c1,c2 in zip(pan_columns,pan_columns_mast):
