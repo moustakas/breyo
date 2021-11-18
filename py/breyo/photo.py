@@ -109,7 +109,7 @@ def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False, maxsources=10000):
     cat = vquery.query_region(field, width=radius*u.deg, catalog="II/349/ps1")[0]
 
     # to make this compatible with original version that pulled catalog from MAST
-    for c1,c2 in zip(pan_columns,pan_columns_mast)
+    for c1,c2 in zip(pan_columns,pan_columns_mast):
         cat.rename_column(c1,c2)
     # color cut
     gi = cat['gMeanPSFMag'] - cat['iMeanPSFMag']
