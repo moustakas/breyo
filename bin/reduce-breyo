@@ -547,6 +547,7 @@ def main():
 
                 # match them, merge the tables, and write out
                 radec_stars = imgwcs.all_pix2world(srcs['xcentroid']+1, srcs['ycentroid']+1, 1)
+                print(refsrcs['raMean'])
                 refcoord = SkyCoord(ra=refsrcs['raMean'] * u.deg, dec=refsrcs['decMean'] * u.deg)
                 coord = SkyCoord(ra=radec_stars[0] * u.deg, dec=radec_stars[1] * u.deg)
 
