@@ -582,9 +582,9 @@ def main():
 
                 # write out
                 outhdu = astropy.io.fits.convenience.table_to_hdu(out)
-                outhdu.header['EXTNAME'] = 'REFSTARS'
-                for key in ('DATE-OBS', 'EXPTIME', 'AIRMASS', 'FILTER'):
-                    outhdu.header[key] = (hdu.header[key], hdu.header.comments[key])
+                #outhdu.header['EXTNAME'] = 'REFSTARS'
+                #for key in ('DATE-OBS', 'EXPTIME', 'AIRMASS', 'FILTER'):
+                #    outhdu.header[key] = (hdu.header[key], hdu.header.comments[key])
 
                 print('Writing {} reference stars to {}'.format(len(out), outfile))
                 try:
