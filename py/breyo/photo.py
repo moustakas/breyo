@@ -103,7 +103,7 @@ def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False, maxsources=10000):
                                         "zmag":"<18","zmag":"> 8"},   
                         row_limit=maxsources)
 
-    field = coord.SkyCoord(ra=ra_deg, dec=dec_deg,
+    field = SkyCoord(ra=ra_deg, dec=dec_deg,
                            unit=(u.deg, u.deg),
                            frame='icrs')
     cat = vquery.query_region(field, width=radius*u.deg, catalog="II/349/ps1")[0]
