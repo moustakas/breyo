@@ -112,6 +112,8 @@ def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False, maxsources=10000):
     gi = cat['gMeanPSFMag'] - cat['iMeanPSFMag']
     keep = np.where( (gi > 0.4) * (gi < 2.7) )[0]
     cat = cat[keep]
+    if verbose:
+        print('Number of objects in panstarrs catalog = {}'.format(len(cat)))
         
     return cat
 
