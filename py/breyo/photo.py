@@ -39,7 +39,7 @@ def find_stars(img, fwhm=3.0, nsigma=5, verbose=False):
         
     return srcs
 
-def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False):
+def get_panstarrs_catalog_old(imgwcs, radius=0.2, verbose=False):
     import astropy.units as u
     from astropy.coordinates import SkyCoord
     from astroquery.mast import Catalogs
@@ -67,6 +67,58 @@ def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False):
     cat = cat[keep]
     
     return cat
+
+def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False, maxsources=10000):
+    """
+    FOUND THIS ON THE WEB 
+    https://mommermi.github.io/astronomy/2017/02/14/accessing-the-gaia-and-pan-starrs-catalogs-using-python.html    
+    
+    Query PanSTARRS @ VizieR using astroquery.vizier
+    :param ra_deg: RA in degrees
+    :param dec_deg: Declination in degrees
+    :param rad_deg: field radius in degrees
+    :param maxmag: upper limit G magnitude (optional)
+    :param maxsources: maximum number of sources
+    :return: astropy.table object
+    """
+
+    import astropy.units as u
+    from astropy.coordinates import SkyCoord
+    from astroquery.vizier import Vizier
+
+    ra0, dec0 = imgwcs.wcs.crval
+    coords = SkyCoord(ra0, dec0, unit=u.deg, frame='icrs')
+    
+    if verbose:
+        print('Querying Pan-STARRS {:.3f} deg around RA, Dec={:.5f}, {:.5f} '.format(radius, ra0, dec0))
+    
+    pan_columns =['objID', 'RAJ2000', 'DEJ2000','gmag', 'rmag','imag','zmag', 'ymag']
+    #print(pan_columns)
+    pan_columns_mast = ['objID', 'raMean', 'decMean','gMeanPSFMag', 'rMeanPSFMag', 'iMeanPSFMag', 'zMeanPSFMag']
+        
+    vquery = Vizier(columns=pan_columns,
+                        column_filters={"gmag":"<18","gmag":"> 8",
+                                        "rmag":"<18","rmag":"> 8",
+                                        "imag":"<18","imag":"> 8",
+                                        "zmag":"<18","zmag":"> 8"},   
+                        row_limit=maxsources)
+
+    field = coord.SkyCoord(ra=ra_deg, dec=dec_deg,
+                           unit=(u.deg, u.deg),
+                           frame='icrs')
+    cat = vquery.query_region(field, width=radius*u.deg, catalog="II/349/ps1")[0]
+
+    # to make this compatible with original version that pulled catalog from MAST
+    for c1,c2 in zip(pan_columns,pan_columns_mast)
+        cat.rename_column(c1,c2)
+    # color cut
+    gi = cat['gMeanPSFMag'] - cat['iMeanPSFMag']
+    keep = np.where( (gi > 0.4) * (gi < 2.7) )[0]
+    cat = cat[keep]
+        
+    return cat
+
+
 
 def reproject_one_image(hdu, pixscale=0.8):
     """Little wrapper script to project (i.e., undistort) a distorted 
