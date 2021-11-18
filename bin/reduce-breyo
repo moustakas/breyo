@@ -587,10 +587,7 @@ def main():
                 #    outhdu.header[key] = (hdu.header[key], hdu.header.comments[key])
 
                 print('Writing {} reference stars to {}'.format(len(out), outfile))
-                try:
-                    outhdu.writeto(outfile, overwrite=True)
-                except:
-                    return outhdu
+                outhdu.writeto(outfile, overwrite=True)
 
     if args.photcalib:
         from scipy.optimize import curve_fit
