@@ -184,7 +184,7 @@ move back to BREYO_DATA_DIR and proceed with pipeline.
 cd ../../
 ```
 
-If reducing data from the Kepler K4040 CMOS detector:
+If reducing data from the Kepler K4040 CMOS detector (NOTE: this is all you need to dofor exoplanet data):
 ```
 reduce-breyo 2020-11-08 --kepler --masterdarks --masterflats --reduceall --crzap --astrometry --refstars
 
