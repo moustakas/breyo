@@ -163,11 +163,11 @@ If the coordinates were not added to the image headers correctly, then airmass w
 ```
 gethead AIRMASS p*.fits
 ```
-To fix this:
+To fix this, run this script to recalculate the AIRMASS once the RA and DEC are in place.
+```
+python ~/github/breyo/py/breyo/get_airmass.py --filestring p-TrES
+```
 
-```
-sethead AIRMASS=1 p*.fits
-```
 ### Other Gotchas
 
 The bias frames should be named 'bias*.fits'.  If they are not, you need to rename them before running the pipeline.  For example:
