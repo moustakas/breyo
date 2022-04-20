@@ -147,10 +147,17 @@ mkdir junk
 You can also fix any filenames that were entered incorrectly while observing.  Again, this should be done at the telescope.
 
 ### If you need to change the prefix of images
-Darks should have the prefix "dark", and skyflats should be "skyflat...", etc.  If you named something incorrectly while observing, you can change the prefix as follows:
+Darks should have the prefix "dark", and skyflats should be "skyflat...", etc.  The bias frames should be named 'bias*.fits'.  If they are not, you need to rename them before running the pipeline.  You can change the prefix as follows:
 
 ```
 python ~/github/breyo/py/breyo/change_prefix.py --orig NGC3227 --new dark
+```
+
+Here is another way.   
+
+```
+rename 's/Bias/bias/' Bias*.fits
+
 ```
 
 ### Check image coordinates
@@ -176,13 +183,7 @@ python ~/github/breyo/py/breyo/get_airmass.py --filestring p-TrES
 ```
 
 ### Other Gotchas
-
-The bias frames should be named 'bias*.fits'.  If they are not, you need to rename them before running the pipeline.  For example:
-
-```
-rename 's/Bias/bias/' Bias*.fits
-
-```
+nothing to report right now
 
 ### Proceed with pipeline reduction with Kepler Data
 
