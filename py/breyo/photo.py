@@ -77,8 +77,7 @@ def get_panstarrs_catalog(imgwcs, radius=0.2, verbose=False, maxsources=10000):
     :param ra_deg: RA in degrees
     :param dec_deg: Declination in degrees
     :param rad_deg: field radius in degrees
-    :param maxmag: upper limit G magnitude (optional)
-    :param maxsources: maximum number of sources
+    :param maxmag: upper limit G magnitude (optional)    :param maxsources: maximum number of sources
     :return: astropy.table object
     """
 
