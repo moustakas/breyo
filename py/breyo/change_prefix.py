@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('--new', dest = 'new', default = None, help = "new prefix")
 
     args = parser.parse_args()
-    print(args.orig,args.new)
+    #print(args.orig,args.new)
     matchstring = args.orig+'*.fits'
     print('matchstring = ',matchstring)
     #print(matchstring)
