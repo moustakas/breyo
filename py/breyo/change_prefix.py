@@ -22,7 +22,7 @@ if __name__ == '__main__':
     #print(args.ra)
     #print(args.dec)    
     
-    if args.filestring is not None:
+    if args.orig is not None:
         files = glob.glob(matchstring)
         print('got ',len(files),' files to update')
         
