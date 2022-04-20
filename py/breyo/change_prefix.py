@@ -1,5 +1,18 @@
 #!/usr/bin/env python
+'''
+change prefix of file
 
+
+
+example usage:
+
+python ~/github/breyo/py/breyo/change_prefix.py --orig NGC3227 --new dark
+
+
+This will rename all files NGC3227*.fits to dark*.fits
+
+
+'''
 
 import os
 
