@@ -146,6 +146,13 @@ mkdir junk
 ```
 You can also fix any filenames that were entered incorrectly while observing.  Again, this should be done at the telescope.
 
+### If you need to change the prefix of images
+Darks should have the prefix "dark", and skyflats should be "skyflat...", etc.  If you named something incorrectly while observing, you can change the prefix as follows:
+
+```
+python ~/github/breyo/py/breyo/change_prefix.py --orig NGC3227 --new dark
+```
+
 ### Check image coordinates
 
 At least once, the coordinates were not updated correctly in the image headers.
