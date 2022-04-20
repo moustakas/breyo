@@ -19,6 +19,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     print(args.orig,args.new)
     matchstring = args.orig+'*.fits'
+    print('matchstring = ',matchstring)
     #print(matchstring)
     #print(args.ra)
     #print(args.dec)    
