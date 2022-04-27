@@ -650,6 +650,8 @@ def main():
                         scaled_data = hdu.data*10**((coeff[0][0]-17)/2.5)
                         # add zp to header
                         hdu.header.set('PHOTZP','17')
+                        # add original zp, before scaling, to header                        
+                        hdu.header.set('ORIGZP','{:.2f}'.format(coeff[0][0]))
                             
 
                         # save with prefix 'c'
@@ -767,5 +769,51 @@ def main():
                     except:
                         print('  Failed to reproject {}'.format(fname))
 
+    if args.stack:
+
+        # gather all u*.fits images
+
+        # find all images of the same target, and in the same filter
+
+        # combine images according to target/filter
+        
+        # https://ccdproc.readthedocs.io/en/latest/image_combination.html#clipping
+
+        
+        pixscale = 0.8 # [arcsec/pixel]
+        imgsize = 2500 # [pixels]
+
+        if args.kepler:
+            file_string1 = 'uazfdp-*.fits'
+            file_string2 = 'ucazfdp-*.fits'            
+        else:
+            file_string1 = 'uazfbp-*.fits'
+            file_string2 = 'ucazfbp-*.fits'            
+        
+        # this step should happen after photometric calibration (prefix "c")... 
+        keys = ['file', 'object', 'imagetyp', 'filter', 'exptime']
+        ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include=file_string2)
+        if len(ic.files) == 0:
+            ic = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include=file_string1)
+        
+        # organize by unique object
+        for obj in set(ic.summary['object']):
+            # get all files for the same object
+            icobj = ic.filter(object=obj)
+
+            # get the list of filters for that object
+            filterlist = set(icobj.summary['filter'])
+            
+            if args.verbose:
+                print(icobj.summary)
+
+            # loop over list of filters and stack all images in the same filter
+
+            for filt in filterlist:
+                filelist = icobj.filter(filter=filt).files
+
+                outfile = '{}-{}-stacked.fits'.format(obj,filt)
+                
+                ccdp.combine(filelist,output_file=outfile,method='average',unit=u.electron,sigma_clip=True,sigma_clip_high_thresh=3)
 if __name__ == '__main__':
     t = main()
