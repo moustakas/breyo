@@ -812,8 +812,9 @@ def main():
             for filt in filterlist:
                 filelist = icobj.filter(filter=filt).files
 
-                outfile = '{}-{}-stacked.fits'.format(obj,filt)
-                
+                outfile = os.path.join(reduxdir,'{}-{}-stacked.fits'.format(obj,filt))
+                if os.path.exists(outfile):
+                    os.remove(outfile)
                 ccdp.combine(filelist,output_file=outfile,method='average',unit=u.electron,sigma_clip=True,sigma_clip_high_thresh=3)
 if __name__ == '__main__':
     t = main()
