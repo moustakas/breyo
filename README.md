@@ -21,17 +21,33 @@ In case the conda installation of astrometry.net doesn't work, try:
 brew install wcslib
 brew install cairo
 brew install netpbm
-export NETPBM_LIB="-L/usr/local/lib -lnetpbm"
-export NETPBM_INC=-I/usr/local/include/netpbm
-export CAIRO_LIB="-L/usr/local/lib -lcairo"
-export CAIRO_INC=-I/usr/local/include/cairo
+brew install jpeg
+
+export NETPBM_LIB="-L/opt/homebrew/lib -lnetpbm"
+export NETPBM_INC="-I/opt/homebrew/include/netpbm"
+export CAIRO_LIB="-L/opt/homebrew/lib -lcairo"
+export CAIRO_INC="-I/opt/homebrew/include/cairo"
+export JPEG_INC=-"I/opt/homebrew/opt/jpeg/include"
+export JPEG_LIB="-L/opt/homebrew/opt/jpeg/lib -ljpeg"
+
+export ARCH_FLAGS="-arch=linux/amd64"
+export CFLAGS="-arch=linux/amd64"
+export LDFLAGS="-arch=linux/amd64 $LDFLAGS"
+export LDLIBS="-arch=linux/amd64 $LDLIBS"
+
 cd /usr/local/share
 git clone https://github.com/dstndstn/astrometry.net
 cd astrometry.net
-ln -s /usr/local/include/netpbm netpbm
+ln -s /opt/homebrew/include/netpbm netpbm
+cd include 
+ln -s /opt/homebrew/opt/jpeg/include/jconfig.h
+ln -s /opt/homebrew/opt/jpeg/include/jmorecfg.h
+ln -s /opt/homebrew/opt/jpeg/include/jpeglib.h
+cd ..
 make
+make py
 make extra
-make install INSTALL_DIR=/usr/local/astrometry
+make install INSTALL_DIR=/Users/ioannis/code/astrometry
 ```
 
 You also need to have the Schlegel dust map installed.  https://github.com/kbarbary/sfdmap/
