@@ -307,7 +307,10 @@ def main():
                             print()
                             dark_exptimes = np.array(dark_exptimes)
                             diff_exptimes = dark_exptimes - fexposure_time
-                            closest_time =  np.min(diff_exptimes)
+                            closest_time =  dark_exptimes[diff_exptimes == np.min(np.abs(diff_exptimes))]
+
+                            
+                            print("closest exposure time = ",closest_time)
                             best_dark = ic_masterdarks.files_filtered(exptime=closest_time, include_path=True)
                             print("dark with closest exptime is ",best_dark)
                             masterdark = CCDData.read(best_dark)
