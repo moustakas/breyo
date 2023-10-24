@@ -309,6 +309,7 @@ def main():
                             diff_exptimes = flat_exptimes - fexposure_time
                             closest_time =  np.min(diff_exptimes)
                             best_dark = ic_masterdarks.files_filtered(exptime=closest_time, include_path=True)
+                            print("dark with closest exptime is ",best_dark)
                             masterdark = CCDData.read(best_dark)
                             # subtract dark, and enable scaling
                             flat = ccdp.subtract_dark(flat, masterdark, add_keyword={'SUBDARK': True},dark_exposure=closest_time*u.s,data_exposure=fexposure_time*u.s,scale=True)
