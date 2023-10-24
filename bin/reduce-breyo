@@ -301,12 +301,14 @@ def main():
                             ic_masterdarks = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='master-dark-*.fits')
                             # find closest exposure time to flat image
                             flat_exptimes = sorted(set(ic_masterdarks.summary['exptime']))
+
                             diff_exptimes = flat_exptimes - fexposure_time
                             closest_time =  np.min(diff_exptimes)
                             best_dark = ic_masterdarks.files_filtered(exptime=closest_time, include_path=True)
-                            masterdark = CCDData.read(best_dark)                            
-                            flat = ccdp.subtract_dark(flat, masterdark, add_keyword={'SUBDARK': True},dark_exposure=closest_time*u.s,data_exposure=fexposure_time*u.s,scale=True)
+                            masterdark = CCDData.read(best_dark)
                             # subtract dark, and enable scaling
+                            flat = ccdp.subtract_dark(flat, masterdark, add_keyword={'SUBDARK': True},dark_exposure=closest_time*u.s,data_exposure=fexposure_time*u.s,scale=True)
+
                             
                         # look for the matching dark
                     rflats.append(flat)
