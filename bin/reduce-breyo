@@ -301,16 +301,16 @@ def main():
                             ic_masterdarks = ccdp.ImageFileCollection(reduxdir, keywords=keys, glob_include='master-dark-*.fits')
                             # find closest exposure time to flat image
                             dark_exptimes = sorted(set(ic_masterdarks.summary['exptime']))
-                            print()
-                            print('dark_exptimes = ',dark_exptimes)
-                            print('fexposure_time = ',fexposure_time)
-                            print()
+                            #print()
+                            #print('dark_exptimes = ',dark_exptimes)
+                            #print('fexposure_time = ',fexposure_time)
+                            #print()
                             dark_exptimes = np.array(dark_exptimes)
                             diff_exptimes = dark_exptimes - fexposure_time
                             closest_time =  dark_exptimes[diff_exptimes == np.min(np.abs(diff_exptimes))][0]
 
                             
-                            print("closest exposure time = ",closest_time)
+                            #print("closest exposure time = ",closest_time)
                             best_dark = ic_masterdarks.files_filtered(exptime=closest_time, include_path=True)[0]
                             print("dark with closest exptime is ",best_dark)
                             #data = astropy.io.fits.getdata(best_dark)
