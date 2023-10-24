@@ -30,7 +30,7 @@ if __name__ == '__main__':
     ##### SET UP ARGPARSE
     ###########################
 
-    parser = argparse.ArgumentParser(description ='Program to replace RA and DEC in STL11000M header with user provided input')
+    parser = argparse.ArgumentParser(description ='Program to add the airmass to files when data was taken without telescope connection.')
     parser.add_argument('--filestring', dest = 'filestring', default=None, help = 'filestring for glob. e.g. to get *M39*.fits, enter M39')
     parser.add_argument('--airmasskeyword', dest = 'seczkeyword', default = 'AIRMASS', help = 'header keyword for airmass.  Default is AIRMASS')    
 
@@ -49,9 +49,16 @@ if __name__ == '__main__':
         for f in files:
             data,header = fits.getdata(f,header=True)
             # get RA and DEC
-            ra = header['CRVAL1']
-            dec = header['CRVAL2']
-            target_coord = SkyCoord(ra,dec,unit='deg')
+            try:
+                ra = header['CRVAL1']
+                dec = header['CRVAL2']
+                target_coord = SkyCoord(ra,dec,unit='deg')
+            except KeyError:
+                ra = header['OBJCTRA']
+                dec = header['OBJCTDEC']
+                # these are in hh mm ss
+                target_coord = SkyCoord(ra,dec,unit=(u.hourangle, u.deg))
+            
             tobs = header['JD']
             t = Time(tobs, format='jd')
             
