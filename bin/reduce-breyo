@@ -307,7 +307,7 @@ def main():
                             print()
                             dark_exptimes = np.array(dark_exptimes)
                             diff_exptimes = dark_exptimes - fexposure_time
-                            closest_time =  dark_exptimes[diff_exptimes == np.min(np.abs(diff_exptimes))]
+                            closest_time =  dark_exptimes[diff_exptimes == np.min(np.abs(diff_exptimes))][0]
 
                             
                             print("closest exposure time = ",closest_time)
