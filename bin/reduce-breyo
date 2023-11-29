@@ -283,7 +283,7 @@ def main():
                     flat_mean = np.mean(flat)
                     if args.kepler & (flat_mean > 50000):
                         continue
-                    if not args.kepler & (flat_mean > 32000):
+                    if not args.kepler & (flat_mean > 55000):
                         continue
                     if not args.kepler:
                         flat = ccdp.subtract_bias(flat, masterbias, add_keyword={'SUBBIAS': True})
