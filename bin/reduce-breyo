@@ -284,6 +284,7 @@ def main():
                     if args.kepler & (flat_mean > 50000):
                         continue
                     if not args.kepler & (flat_mean > 55000):
+                        print("skipping this flat because counts are > 55k")
                         continue
                     if not args.kepler:
                         flat = ccdp.subtract_bias(flat, masterbias, add_keyword={'SUBBIAS': True})
@@ -323,6 +324,7 @@ def main():
 
                             
                         # look for the matching dark
+                    print("appending flat to flatlist")
                     rflats.append(flat)
                     
                 masterflat = ccdp.combine(rflats,
