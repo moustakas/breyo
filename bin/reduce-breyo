@@ -326,7 +326,7 @@ def main():
 
                             
                         # look for the matching dark
-                    print("appending flat to flatlist")
+                    #print("appending flat to flatlist")
                     rflats.append(flat)
                     
                 masterflat = ccdp.combine(rflats,
