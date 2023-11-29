@@ -283,9 +283,11 @@ def main():
                     flat_mean = np.mean(flat)
                     if args.kepler & (flat_mean > 50000):
                         continue
-                    if not args.kepler & (flat_mean > 55000):
-                        print("skipping this flat because counts are > 55k")
-                        continue
+
+                    # WARNING - removing this for now, but we should figure out what count limit is
+                    #if not args.kepler & (flat_mean > 55000):
+                    #    print("skipping this flat because counts are > 55k")
+                    #    continue
                     if not args.kepler:
                         flat = ccdp.subtract_bias(flat, masterbias, add_keyword={'SUBBIAS': True})
                     else:
