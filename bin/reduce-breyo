@@ -111,7 +111,7 @@ def main():
     # https://ccdproc.readthedocs.io/en/latest/reduction_toolbox.html#gain-correct-and-create-deviation-image
     # https://mwcraig.github.io/ccd-as-book/08-00-Image-masking.html
     if args.preproc:
-        keys = ['naxis1', 'naxis2', 'imagetyp', 'filter', 'exptime']
+        keys = ['naxis1']#, 'naxis2', 'imagetyp', 'filter', 'exptime']
         ic = ccdp.ImageFileCollection(rawdir, keywords=keys, glob_include='skyflat*.fit*')#, glob_exclude='*test*.fit')
         print('Parsing {} files in {}'.format(len(ic.files), rawdir))
         if args.verbose:
