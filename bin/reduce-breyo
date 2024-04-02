@@ -327,7 +327,7 @@ def main():
                         # look for the matching dark
                     #print("appending flat to flatlist")
                     rflats.append(flat)
-                    
+                print(f"{filt} rflats = ",rflats)    
                 masterflat = ccdp.combine(rflats,
                                           method='average', scale=_inv_median,
                                           sigma_clip=True,
