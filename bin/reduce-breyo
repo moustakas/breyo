@@ -266,6 +266,7 @@ def main():
         keys = ['file', 'imagetyp', 'exptime', 'filter']
         ic = ccdp.ImageFileCollection(calibdir, keywords=keys, glob_include='skyflat*.fits')
         for filt in set(ic.summary['filter']):
+            print(f"\nWORKING ON FILTER={filt}\n")
             masterflatfile = os.path.join(reduxdir, 'master-flat-{}.fits'.format(filt))
             if os.path.isfile(masterflatfile) and not args.overwrite:
                 print('Skipping existing master flat {}'.format(masterflatfile))
