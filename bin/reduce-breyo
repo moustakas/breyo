@@ -281,7 +281,7 @@ def main():
                     # check count levels in the flat image.  if counts are too high,
                     # skip the image
                     flat_mean = np.mean(flat)
-                    if args.kepler & (flat_mean > 60000):
+                    if args.kepler & (flat_mean > 64000):
                         continue
 
                     # WARNING - removing this for now, but we should figure out what count limit is
