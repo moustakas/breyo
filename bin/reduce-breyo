@@ -281,7 +281,8 @@ def main():
                     # check count levels in the flat image.  if counts are too high,
                     # skip the image
                     flat_mean = np.mean(flat)
-                    if args.kepler & (flat_mean > 64000):
+                    
+                    if args.kepler & (flat_mean > 1.5*64000): # flat images should be in units of electrons
                         continue
 
                     # WARNING - removing this for now, but we should figure out what count limit is
