@@ -6,7 +6,9 @@ Observatory](https://www.siena.edu/departments/physics-and-astronomy/breyo-obser
 0.7-meter optical telescope.
 
 ## Installing
-
+> ! NOTE
+> need to add versions for all packages
+> 
 ```
 conda create --name breyo python=3.6
 conda activate breyo
