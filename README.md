@@ -6,7 +6,7 @@ Observatory](https://www.siena.edu/departments/physics-and-astronomy/breyo-obser
 0.7-meter optical telescope.
 
 ## Installing
-> ! NOTE
+> [!NOTE]
 > need to add versions for all packages
 > 
 ```
