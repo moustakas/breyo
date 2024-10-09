@@ -6,7 +6,7 @@ Observatory](https://www.siena.edu/departments/physics-and-astronomy/breyo-obser
 0.7-meter optical telescope.
 
 ## Installing
-> ! NOTE
+> [!NOTE]
 > need to add versions for all packages
 > 
 ```
@@ -17,7 +17,29 @@ conda install -c conda-forge astrometry
 conda install jupyterlab ipython
 ```
 
-In case the conda installation of astrometry.net doesn't work, try: 
+>[!NOTE]
+> if you get an issue with libgsl when running astrometry
+
+When installing this on `draco`, I ran the above commands and then got the error: 
+
+```
+libgsl.so.25: cannot open shared object file: No such file or directory
+```
+I found the installed version of the library by running :
+```
+ldconfig -p |grep libgsl
+```
+And then I made a symbolic link:
+```
+sudo ln -s /lib/x86_64-linux-gnu/libgsl.so.27 /usr/lib/libgsl.so.25
+```
+
+I know this is a cheat, but it seems to work ok, so there must be backwards compatibility.
+
+
+### In case the conda installation of astrometry.net doesn't work
+
+Try: 
 
 ```
 brew install wcslib
