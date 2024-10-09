@@ -17,7 +17,6 @@ conda install -c conda-forge astrometry
 conda install jupyterlab ipython
 ```
 
-### 2024-10-09
 >[!NOTE]
 > if you get an issue with libgsl when running astrometry
 
