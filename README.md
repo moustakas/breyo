@@ -10,7 +10,7 @@ Observatory](https://www.siena.edu/departments/physics-and-astronomy/breyo-obser
 > need to add versions for all packages
 > 
 ```
-conda create --name breyo python=3.6
+conda create --name breyo python=3.10
 conda activate breyo
 conda install -c astropy astropy ccdproc photutils 
 conda install -c conda-forge astrometry
