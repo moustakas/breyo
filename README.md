@@ -6,6 +6,19 @@ Observatory](https://www.siena.edu/departments/physics-and-astronomy/breyo-obser
 0.7-meter optical telescope.
 
 ## Installing
+
+### Use the yml file! (preferred)
+To create the breyo conda environment:
+```
+conda env create -f breyo.yml
+```
+
+Then activate it:
+```
+conda activate breyo
+```
+
+### Install Environment and Packages Individually
 > [!NOTE]
 > need to add versions for all packages
 > 
